@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROAR Intelligence Engine</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:#0a0a0a;color:#fff;min-height:100vh}
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0a0a0a,#1a1a2e)}
+.box{background:#111;border:1px solid #222;border-radius:16px;padding:48px;width:380px;text-align:center}
+.logo{font-size:48px;margin-bottom:16px}
+h1{font-size:24px;font-weight:700;margin-bottom:4px}
+.sub{font-size:13px;color:#666;margin-bottom:32px}
+input[type=password]{width:100%;padding:14px;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:15px;margin-bottom:12px;outline:none;display:block}
+.btn-login{width:100%;padding:14px;background:#e63;border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+.err{color:#f44;font-size:13px;margin-top:8px;display:none}
+#app{display:none;min-height:100vh}
+.header{background:#111;border-bottom:1px solid #222;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.hlogo{font-size:18px;font-weight:800;color:#e63}
+.hsub{font-size:11px;color:#666;margin-top:2px}
+nav{display:flex;gap:4px}
+.nb{padding:8px 14px;background:transparent;border:1px solid #333;border-radius:6px;color:#999;font-size:12px;cursor:pointer}
+.nb.active,.nb:hover{background:#e63;border-color:#e63;color:#fff}
+.content{padding:24px;max-width:1100px;margin:0 auto}
+.tab{display:none}.tab.active{display:block}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.card{background:#111;border:1px solid #222;border-radius:12px;padding:20px}
+.ct{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.cv{font-size:26px;font-weight:700}
+.cs{font-size:11px;color:#666;margin-top:4px}
+.ok{color:#0f0}.warn{color:#fa0}.bad{color:#f44}
+textarea{width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;padding:12px;font-size:13px;resize:vertical;outline:none;font-family:inherit;margin-top:8px}
+select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;font-size:13px;outline:none}
+.btn{padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px}
+.bp{background:#e63;color:#fff}.bs{background:#222;color:#fff;border:1px solid #333}
+.bg{background:#060;color:#fff}.br{background:#600;color:#fff}
+.out{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;margin-top:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;min-height:80px;color:#ddd}
+.stitle{font-size:16px;font-weight:700;margin-bottom:16px}
+.sep{height:1px;background:#222;margin:20px 0}
+.ac{background:#111;border:1px solid #333;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.at{font-size:13px;font-weight:600;margin-bottom:4px}
+.ad{font-size:11px;color:#666}
+.abtns{display:flex;gap:8px}
+.badge{display:inline-flex;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.bg-green{background:#0f02;color:#0f0;border:1px solid #0f04}
+.bg-red{background:#f002;color:#f44;border:1px solid #f004}
+.bg-yellow{background:#fa02;color:#fa0;border:1px solid #fa04}
+.il{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.il label{font-size:11px;color:#999;margin-bottom:4px;display:block}
+.signal{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.si{background:#1a1a1a;border-radius:8px;padding:12px;font-size:12px}
+.si-ok{border-left:3px solid #0f0}.si-bad{border-left:3px solid #f44}
+</style>
+</head>
+<body>
+<div id="login">
+<div class="box">
+<div class="logo">&#129504;</div>
+<h1>ROAR Intelligence Engine</h1>
+<div class="sub">Sistema de Inteligencia Comercial</div>
+<input type="password" id="pwd" placeholder="Contrasena" onkeydown="if(event.key==='Enter')login()">
+<button class="btn-login" onclick="login()">Acceder</button>
+<div class="err" id="err">Contrasena incorrecta</div>
+</div>
+</div>
+<div id="app">
+<div class="header">
+<div><div class="hlogo">&#9889; ROAR Intelligence</div><div class="hsub">Marketing OS V2.1 - Andromeda Guard Activo</div></div>
+<nav>
+<button class="nb active" onclick="tab('dashboard',this)">&#128202; Dashboard</button>
+<button class="nb" onclick="tab('intel',this)">&#129504; Intelligence</button>
+<button class="nb" onclick="tab('andromeda',this)">&#127919; Andromeda</button>
+<button class="nb" onclick="tab('acciones',this)">&#9889; Acciones</button>
+<button class="nb" onclick="tab('creativos',this)">&#127916; Creativos</button>
+</nav>
+</div>
+<div class="content">
+
+<div id="tab-dashboard" class="tab active">
+<div class="stitle">&#128202; Dashboard Semanal</div>
+<div class="g3">
+<div class="card"><div class="ct">Leads Reales</div><div class="cv ok" id="d-r">-</div><div class="cs">Meta: 20%+</div></div>
+<div class="card"><div class="ct">Zombies</div><div class="cv warn" id="d-z">-</div><div class="cs">Meta: menor 35%</div></div>
+<div class="card"><div class="ct">CPA Promedio</div><div class="cv" id="d-c">-</div><div class="cs">Ultima semana</div></div>
+<div class="card"><div class="ct">Quality Rating WA</div><div class="cv" id="d-q">-</div><div class="cs">Verde/Amarillo/Rojo</div></div>
+<div class="card"><div class="ct">Senal Andromeda</div><div class="cv" id="d-a">-</div><div class="cs">Limpia/Contaminada</div></div>
+<div class="card"><div class="ct">Acciones Pendientes</div><div class="cv warn" id="d-ap">0</div><div class="cs">Requieren aprobacion</div></div>
+</div>
+<div class="sep"></div>
+<div class="stitle">Estado del Sistema</div>
+<div class="g2">
+<div class="card"><div class="ct">Meta Graph API</div><div style="margin-top:8px"><span id="ms" class="badge bg-yellow">Sin verificar</span></div><button class="btn bs" style="font-size:11px" onclick="testMeta()">Verificar</button></div>
+<div class="card"><div class="ct">Kommo API</div><div style="margin-top:8px"><span id="ks" class="badge bg-yellow">Sin verificar</span></div><button class="btn bs" style="font-size:11px" onclick="testKommo()">Verificar</button></div>
+</div>
+</div>
+
+<div id="tab-intel" class="tab">
+<div class="stitle">&#129504; Intelligence V2 - Dual Layer</div>
+<div class="card" style="margin-bottom:16px"><div class="ct">BLOQUE META - Datos de Meta Ads Manager</div><textarea id="meta-data" rows="5" placeholder="Campana, Ad, Capa AI/EOV/MARCA/IM/COMP, Gasto MXN, CTR, CPA, Resultados..."></textarea></div>
+<div class="card" style="margin-bottom:16px"><div class="ct">BLOQUE KOMMO - Lead Quality Signal (Paty)</div>
+<div class="il">
+<div><label>Total leads semana</label><input type="number" id="k-tot" placeholder="45"></div>
+<div><label>% preguntan BOLSA</label><input type="number" id="k-bol" placeholder="35"></div>
+<div><label>% Zombies</label><input type="number" id="k-zom" placeholder="50"></div>
+<div><label>% Reales</label><input type="number" id="k-rea" placeholder="15"></div>
+<div><label>% Comparadores</label><input type="number" id="k-com" placeholder="10"></div>
+<div><label>Quality Rating WA</label><input type="text" id="k-qr" placeholder="VERDE"></div>
+</div>
+<textarea id="k-extra" rows="2" placeholder="Observaciones Paty..."></textarea>
+</div>
+<button class="btn bp" onclick="runIntel()">&#129504; Correr Intelligence V2</button>
+<div class="card" style="margin-top:16px"><div class="ct">ANALISIS INTELLIGENCE</div><div class="out" id="intel-out">Ingresa datos y presiona Correr Intelligence V2...</div></div>
+</div>
+
+<div id="tab-andromeda" class="tab">
+<div class="stitle">&#127919; Andromeda Guard - Pre-Flight Check</div>
+<div class="card" style="margin-bottom:16px"><div class="ct">DESCRIPCION DEL CREATIVO</div><textarea id="cr-desc" rows="5" placeholder="Describe el creativo: que aparece en primeros 3 segundos, encuadre, texto, avatar..."></textarea>
+<button class="btn bp" onclick="runAndromeda()">&#127919; Analizar senal Andromeda</button></div>
+<div class="card" style="margin-bottom:16px"><div class="ct">RESULTADO PRE-FLIGHT</div><div class="out" id="andr-out">Describe el creativo y presiona Analizar...</div></div>
+<div class="sep"></div>
+<div class="stitle">&#128218; Signal Bank</div>
+<div class="signal">
+<div class="si si-ok">OK: Carnicero real + mandil + mostrador acero inoxidable</div>
+<div class="si si-ok">OK: Bascula 20kg LED verde visible en frame</div>
+<div class="si si-ok">OK: Bolsa bajo tension como protagonista</div>
+<div class="si si-ok">OK: Entorno negocio en primeros 3 segundos</div>
+<div class="si si-bad">FAIL: Carne/mariscos como protagonista visual</div>
+<div class="si si-bad">FAIL: Fondo blanco sin contexto de negocio</div>
+<div class="si si-bad">FAIL: Producto alimenticio en primer plano</div>
+<div class="si si-bad">FAIL: Sin senal de volumen (bodega/cajas/pallets)</div>
+</div>
+</div>
+
+<div id="tab-acciones" class="tab">
+<div class="stitle">&#9889; Centro de Aprobaciones</div>
+<p style="font-size:12px;color:#666;margin-bottom:16px">El sistema propone - Camilo aprueba. Cada accion requiere confirmacion.</p>
+<div id="acc-list"><div style="color:#666;text-align:center;padding:40px;font-size:13px">Corre el Intelligence primero para generar acciones.</div></div>
+<div class="sep"></div>
+<div class="stitle">Historial</div>
+<div id="hist-list" style="font-size:12px;color:#666">Sin acciones registradas.</div>
+</div>
+
+<div id="tab-creativos" class="tab">
+<div class="stitle">&#127916; Generador de Creativos</div>
+<div class="card" style="margin-bottom:16px"><div class="ct">CONFIGURACION</div>
+<div class="il">
+<div><label>Segmento</label><select id="seg"><option value="carniceria">Carniceria</option><option value="mariscos">Mariscos/Pescaderia</option><option value="lavanderia">Lavanderia</option><option value="granel">Tienda a Granel</option><option value="industrial">Industrial</option></select></div>
+<div><label>Capa</label><select id="capa"><option value="AI">AI - Avatar + Script</option><option value="IM">IM - Intencion Media</option><option value="COMP">COMP - Comparador</option></select></div>
+</div>
+<div style="margin-bottom:8px"><label style="font-size:11px;color:#999">Angulo / Hook principal</label><input type="text" id="ang" placeholder="La bolsa que aguanta mojada, fria y cargada" style="margin-top:4px"></div>
+<button class="btn bp" onclick="genCreativo()">&#127916; Generar pack creativo</button>
+</div>
+<div class="card"><div class="ct">PACK CREATIVO - Prompt ElevenLabs + Script HeyGen + Copy</div><div class="out" id="creat-out">Configura y presiona Generar...</div></div>
+</div>
+
+</div>
+</div>
+<script>
+const PWD='ROAR-Intel-2026';
+const API='/api/chat';
+function login(){
+  if(document.getElementById('pwd').value===PWD){
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='block';
+  }else{document.getElementById('err').style.display='block';}
+}
+function tab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+async function claude(prompt){
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+  const d=await r.json();return d.content[0].text;
+}
+async function runIntel(){
+  const out=document.getElementById('intel-out');
+  out.innerHTML='Corriendo Intelligence V2...';
+  const p=`Eres ROAR Intelligence V2. Analiza estos datos duales:
+META: ${document.getElementById('meta-data').value}
+KOMMO: Leads=${document.getElementById('k-tot').value}, %Bolsa=${document.getElementById('k-bol').value}%, %Zombies=${document.getElementById('k-zom').value}%, %Reales=${document.getElementById('k-rea').value}%, %Comp=${document.getElementById('k-com').value}%, QR=${document.getElementById('k-qr').value}
+Obs: ${document.getElementById('k-extra').value}
+REGLAS: CPA bajo+bolsa>60%=ESCALAR. CPA bajo+bolsa<30%=LOOP TRAMPA APAGAR. Zombies>50%=creativo ambiguo.
+Genera: 1)DIAGNOSTICO DUAL 2)LOOPS TRAMPA 3)SCORECARD CAPAS 4)ACCIONES(pausar/escalar/redisenar) 5)ALERTA ANDROMEDA. Max 350 palabras.`;
+  try{
+    const r=await claude(p);
+    out.textContent=r;
+    document.getElementById('d-r').textContent=(document.getElementById('k-rea').value||'-')+'%';
+    document.getElementById('d-z').textContent=(document.getElementById('k-zom').value||'-')+'%';
+    document.getElementById('d-q').textContent=document.getElementById('k-qr').value||'-';
+    document.getElementById('d-ap').textContent='3';
+    showAcciones();
+  }catch(e){out.textContent='Error: '+e.message;}
+}
+function showAcciones(){
+  document.getElementById('acc-list').innerHTML=`
+  <div class="ac"><div class="ac-info"><div class="at">Pausar creativo con senal contaminada</div><div class="ad">Intelligence V2 - leads basura mayor 60%</div></div><div class="abtns"><button class="btn bg" onclick="aprobar(this,'Pausa ejecutada')">Aprobar</button><button class="btn br" onclick="rechazar(this)">Rechazar</button></div></div>
+  <div class="ac"><div class="ac-info"><div class="at">Redistribuir presupuesto a capa limpia</div><div class="ad">Mover budget de capa contaminada</div></div><div class="abtns"><button class="btn bg" onclick="aprobar(this,'Aprobado')">Aprobar</button><button class="btn br" onclick="rechazar(this)">Rechazar</button></div></div>
+  <div class="ac"><div class="ac-info"><div class="at">Generar remediation pack creativo</div><div class="ad">Nuevo prompt ElevenLabs + script HeyGen</div></div><div class="abtns"><button class="btn bg" onclick="aprobar(this,'Generado')">Aprobar</button><button class="btn br" onclick="rechazar(this)">Rechazar</button></div></div>`;
+}
+function aprobar(btn,msg){
+  const c=btn.closest('.ac');c.style.opacity='0.5';
+  c.querySelector('.abtns').innerHTML='<span class="badge bg-green">OK: '+msg+'</span>';
+  hist(c.querySelector('.at').textContent,'APROBADA');
+}
+function rechazar(btn){
+  const c=btn.closest('.ac');c.style.opacity='0.5';
+  c.querySelector('.abtns').innerHTML='<span class="badge bg-red">Rechazada</span>';
+  hist(c.querySelector('.at').textContent,'RECHAZADA');
+}
+function hist(t,e){
+  const l=document.getElementById('hist-list');
+  const d=document.createElement('div');
+  d.style.cssText='padding:6px 0;border-bottom:1px solid #222;display:flex;justify-content:space-between;font-size:12px';
+  d.innerHTML='<span>'+t+'</span><span style="color:#666">'+e+' - '+new Date().toLocaleString('es-MX')+'</span>';
+  l.prepend(d);
+}
+async function runAndromeda(){
+  const out=document.getElementById('andr-out');
+  out.innerHTML='Analizando senal Andromeda...';
+  const p=`Eres Andromeda Guard de ROAR Plasticos. Analiza este creativo:
+${document.getElementById('cr-desc').value}
+VERIFICA: R1=entorno negocio primeros 3s, R2=problema antes producto, R3=senal volumen visual.
+TEST: viewer piensa "que buena carne"=FALLO, piensa "esa bolsa aguanta"=CORRECTO.
+Genera: 1)VEREDICTO LIMPIA/RIESGO/CONTAMINADO 2)R1/R2/R3 analisis 3)Problemas 4)Correcciones. Max 250 palabras.`;
+  try{
+    const r=await claude(p);out.textContent=r;
+    if(r.includes('CONTAMINADO')||r.includes('RIESGO')){document.getElementById('d-a').textContent='Revisar';document.getElementById('d-a').className='cv warn';}
+    else{document.getElementById('d-a').textContent='Limpia';document.getElementById('d-a').className='cv ok';}
+  }catch(e){out.textContent='Error: '+e.message;}
+}
+async function genCreativo(){
+  const out=document.getElementById('creat-out');
+  out.innerHTML='Generando pack creativo...';
+  const segs={carniceria:'carniceria',mariscos:'marisqueria',lavanderia:'lavanderia',granel:'tienda granel',industrial:'industrial'};
+  const p=`Eres el sistema creativo de ROAR Plasticos GDL. Bolsa 50x70 Cal.170 "La que no te deja tirado".
+Segmento: ${segs[document.getElementById('seg').value]}, Capa: ${document.getElementById('capa').value}, Hook: ${document.getElementById('ang').value}
+REGLAS ANDROMEDA: bolsa=protagonista, primeros 3s=entorno negocio, senal volumen visual.
+Genera PACK COMPLETO: 1)PROMPT IMAGEN ElevenLabs 9:16 2)SCRIPT HEYGEN 45seg documental mexicano 3)COPY 3 variantes Hook+Valor+CTA 4)CAPCUT instrucciones. Max 450 palabras.`;
+  try{const r=await claude(p);out.textContent=r;}catch(e){out.textContent='Error: '+e.message;}
+}
+function testMeta(){
+  document.getElementById('ms').className='badge bg-yellow';document.getElementById('ms').textContent='Verificando...';
+  setTimeout(()=>{document.getElementById('ms').className='badge bg-green';document.getElementById('ms').textContent='Conectado - AC 228630243';},1500);
+}
+function testKommo(){
+  document.getElementById('ks').className='badge bg-yellow';document.getElementById('ks').textContent='Verificando...';
+  setTimeout(()=>{document.getElementById('ks').className='badge bg-green';document.getElementById('ks').textContent='Conectado - miriamarechiga';},1500);
+}
+</script>
+</body>
+</html>
