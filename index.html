@@ -314,6 +314,31 @@ async function genAudio(){
     btn.disabled = false;
     btn.textContent = '📊 Cargar métricas reales de Meta';
   }
+
+  async function loadKommoData(){
+    const btn = document.getElementById('kommo-load-btn');
+    const status = document.getElementById('kommo-load-status');
+    btn.disabled = true;
+    btn.textContent = '⏳ Cargando Kommo...';
+    status.textContent = '';
+    try {
+      const r = await fetch('/api/kommo');
+      const d = await r.json();
+      if(d.error) throw new Error(d.error);
+      const k = d.kpis;
+      document.getElementById('k-tot').value = k.totalSemana;
+      document.getElementById('k-bol').value = k.preguntanBolsa;
+      document.getElementById('k-zon').value = k.zombies;
+      document.getElementById('k-rea').value = k.reales;
+      document.getElementById('k-com').value = k.comparadores;
+      document.getElementById('k-qr').value = k.qualityRating;
+      status.textContent = '✅ '+k.totalSemana+' leads cargados – '+new Date().toLocaleTimeString();
+    } catch(e){
+      status.textContent = '❌ Error: '+e.message;
+    }
+    btn.disabled = false;
+    btn.textContent = '📋 Cargar datos reales de Kommo';
+  }
 </script>
 </body>
 </html>
