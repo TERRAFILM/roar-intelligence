@@ -344,6 +344,95 @@ async function genAudio(){
     if(btn){ btn.disabled = false; btn.textContent = '📋 Cargar datos reales de Kommo'; }
   }
 
+
+  let heygenVideoId = null;
+
+  async function generateHeyGenVideo(){
+    const btn = document.getElementById('heygen-btn');
+    const status = document.getElementById('heygen-status');
+    const result = document.getElementById('heygen-result');
+    
+    // Extraer script del pack generado
+    const packText = document.getElementById('creat-out').innerText;
+    const scriptMatch = packText.match(/SCRIPT HEYGEN[^\n]*\n([\s\S]*?)(?=##|COPY|$)/i);
+    const script = scriptMatch ? scriptMatch[1].trim().substring(0, 1500) : packText.substring(0, 1500);
+    
+    if(!script || script === 'Configura y presiona Generar...'){
+      status.textContent = '⚠️ Genera un pack creativo primero';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando a HeyGen...';
+    status.textContent = 'Procesando...';
+    result.style.display = 'none';
+
+    try {
+      const r = await fetch('/api/heygen', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          action: 'generate_video',
+          script: script
+        })
+      });
+      const d = await r.json();
+      
+      if(d.error) throw new Error(d.error);
+      if(d.data && d.data.video_id){
+        heygenVideoId = d.data.video_id;
+        document.getElementById('heygen-video-id').textContent = 'Video ID: '+heygenVideoId;
+        result.style.display = 'block';
+        status.textContent = '✅ Video enviado – renderizando en HeyGen (~2-5 min)';
+      } else {
+        throw new Error(JSON.stringify(d));
+      }
+    } catch(e){
+      status.textContent = '❌ Error: '+e.message;
+    }
+    btn.disabled = false;
+    btn.textContent = '🎬 Enviar a HeyGen y generar video';
+  }
+
+  async function checkHeyGenStatus(){
+    if(!heygenVideoId){ 
+      document.getElementById('heygen-status').textContent = '⚠️ Sin video ID activo';
+      return;
+    }
+    const status = document.getElementById('heygen-status');
+    status.textContent = 'Verificando...';
+    try {
+      const r = await fetch('/api/heygen', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ action: 'video_status', video_id: heygenVideoId })
+      });
+      const d = await r.json();
+      const videoData = d.data || d;
+      const videoStatus = videoData.status || 'unknown';
+      
+      if(videoStatus === 'completed' && videoData.video_url){
+        status.textContent = '✅ Video listo';
+        document.getElementById('heygen-video-url').innerHTML = 
+          '<a href="'+videoData.video_url+'" target="_blank" style="color:#ff6b35;font-size:12px">▶️ Ver video generado</a>';
+      } else {
+        status.textContent = '⏳ Estado: '+videoStatus+' – sigue procesando';
+      }
+    } catch(e){
+      status.textContent = '❌ Error: '+e.message;
+    }
+  }
+
+  // Mostrar panel HeyGen después de generar pack
+  const origGenCreativo = genCreativo;
+  async function genCreativo(){
+    await origGenCreativo();
+    const out = document.getElementById('creat-out');
+    if(out && out.innerText.length > 50){
+      document.getElementById('heygen-panel').style.display = 'block';
+    }
+  }
+
 </script>
 </body>
 </html>
