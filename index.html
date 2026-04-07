@@ -74,6 +74,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <button class="nb" onclick="tab('andromeda',this)">&#127919; Andromeda</button>
 <button class="nb" onclick="tab('acciones',this)">&#9889; Acciones</button>
 <button class="nb" onclick="tab('creativos',this)">&#127916; Creativos</button>
+<button class="nb" onclick="tab('bitacora',this)">&#128221; Bitácora</button>
 </nav>
 </div>
 <div class="content">
@@ -144,6 +145,19 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <div class="sep"></div>
 <div class="stitle">Historial</div>
 <div id="hist-list" style="font-size:12px;color:#666">Sin acciones registradas.</div>
+</div>
+
+<div id="tab-bitacora" class="tab">
+<div class="stitle">&#128221; Bitácora de Inteligencia ROAR</div>
+<div class="card" style="margin-bottom:16px">
+  <div class="ct">REGISTRO SEMANAL</div>
+  <p style="font-size:11px;color:#666;margin-bottom:12px">Se genera automáticamente al correr Intelligence V2. Puedes exportar o editar manualmente.</p>
+  <button class="btn bp" onclick="exportBitacora()" style="margin-bottom:8px">&#128229; Exportar Bitácora TXT</button>
+  <button class="btn bs" onclick="clearBitacora()" style="margin-bottom:8px;margin-left:8px">&#128465; Limpiar</button>
+</div>
+<div id="bitacora-list" style="font-size:12px;color:#aaa;text-align:center;padding:40px">
+  Corre Intelligence V2 para generar el primer registro.
+</div>
 </div>
 
 <div id="tab-creativos" class="tab">
@@ -457,6 +471,102 @@ async function genAudio(){
       document.getElementById('heygen-panel').style.display = 'block';
     }
   }
+
+
+  // ============ BITÁCORA ============
+  let bitacoraEntries = JSON.parse(localStorage.getItem('roar_bitacora') || '[]');
+
+  function saveBitacoraEntry(entry){
+    bitacoraEntries.unshift(entry);
+    if(bitacoraEntries.length > 52) bitacoraEntries.pop(); // máx 52 semanas
+    localStorage.setItem('roar_bitacora', JSON.stringify(bitacoraEntries));
+    renderBitacora();
+  }
+
+  function renderBitacora(){
+    const el = document.getElementById('bitacora-list');
+    if(!el) return;
+    if(bitacoraEntries.length === 0){
+      el.innerHTML = '<div style="color:#666;text-align:center;padding:40px">Sin registros aún. Corre Intelligence V2.</div>';
+      return;
+    }
+    el.innerHTML = bitacoraEntries.map((e,i) => `
+      <div style="border:1px solid #333;border-radius:8px;padding:16px;margin-bottom:12px;background:#1a1a1a">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="color:#ff6b35;font-weight:bold;font-size:13px">Semana ${e.semana || i+1} — ${e.fecha}</span>
+          <span style="font-size:10px;color:#555">${e.hora}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+          <div style="background:#111;padding:8px;border-radius:6px;text-align:center">
+            <div style="font-size:10px;color:#666">LEADS REALES</div>
+            <div style="font-size:16px;color:#4CAF50;font-weight:bold">${e.leadsReales}%</div>
+          </div>
+          <div style="background:#111;padding:8px;border-radius:6px;text-align:center">
+            <div style="font-size:10px;color:#666">ZOMBIES</div>
+            <div style="font-size:16px;color:#f44336;font-weight:bold">${e.zombies}%</div>
+          </div>
+          <div style="background:#111;padding:8px;border-radius:6px;text-align:center">
+            <div style="font-size:10px;color:#666">CPA PROM</div>
+            <div style="font-size:16px;color:#FFC107;font-weight:bold">${e.cpa}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-bottom:8px"><strong style="color:#aaa">Diagnóstico:</strong> ${e.diagnostico}</div>
+        <div style="font-size:11px;color:#888;margin-bottom:8px"><strong style="color:#aaa">Acciones:</strong> ${e.acciones}</div>
+        <div style="font-size:11px;color:#555"><strong>Quality Rating:</strong> ${e.qualityRating} | <strong>Andromeda:</strong> ${e.andromeda}</div>
+      </div>
+    `).join('');
+  }
+
+  function exportBitacora(){
+    if(bitacoraEntries.length === 0){ alert('Sin registros para exportar'); return; }
+    let txt = 'BITÁCORA DE INTELIGENCIA ROAR\n';
+    txt += '================================\n\n';
+    bitacoraEntries.forEach((e,i) => {
+      txt += `SEMANA ${e.semana || i+1} — ${e.fecha} ${e.hora}\n`;
+      txt += `Leads Reales: ${e.leadsReales}% | Zombies: ${e.zombies}% | CPA: ${e.cpa}\n`;
+      txt += `Quality Rating: ${e.qualityRating} | Andromeda: ${e.andromeda}\n`;
+      txt += `Diagnóstico: ${e.diagnostico}\n`;
+      txt += `Acciones: ${e.acciones}\n`;
+      txt += '---\n\n';
+    });
+    const blob = new Blob([txt], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'ROAR_Bitacora_'+new Date().toISOString().slice(0,10)+'.txt';
+    a.click();
+  }
+
+  function clearBitacora(){
+    if(!confirm('¿Limpiar toda la bitácora?')) return;
+    bitacoraEntries = [];
+    localStorage.removeItem('roar_bitacora');
+    renderBitacora();
+  }
+
+  // Auto-registro al correr Intelligence V2
+  const _origRunIntel = runIntel;
+  async function runIntel(){
+    await _origRunIntel();
+    // Capturar datos actuales post-análisis
+    setTimeout(() => {
+      const entry = {
+        fecha: new Date().toLocaleDateString('es-MX'),
+        hora: new Date().toLocaleTimeString('es-MX'),
+        semana: bitacoraEntries.length + 1,
+        leadsReales: document.getElementById('k-rea')?.value || document.getElementById('d-r')?.textContent?.replace('%','') || '-',
+        zombies: document.getElementById('k-zon')?.value || document.getElementById('d-z')?.textContent?.replace('%','') || '-',
+        cpa: document.getElementById('d-c')?.textContent || '-',
+        qualityRating: document.getElementById('k-qr')?.value || '-',
+        andromeda: document.getElementById('d-a')?.textContent || '-',
+        diagnostico: document.getElementById('intel-out')?.innerText?.substring(0,300) || 'Sin diagnóstico',
+        acciones: document.querySelectorAll('.ac-info')?.length + ' acciones generadas'
+      };
+      saveBitacoraEntry(entry);
+    }, 2000);
+  }
+
+  // Inicializar bitácora al cargar
+  document.addEventListener('DOMContentLoaded', renderBitacora);
 
 </script>
 </body>
