@@ -310,6 +310,13 @@ async function genAudio(){
       });
       textarea.value = lines.join('\n');
       status.textContent = '✅ '+d.data.length+' ads cargados – '+new Date().toLocaleTimeString();
+      // Calcular CPA promedio y actualizar Dashboard
+      const adsConDatos = d.data.filter(ad => ad.insights && ad.insights.data && ad.insights.data[0] && parseFloat(ad.insights.data[0].cpc||0) > 0);
+      if(adsConDatos.length > 0){
+        const cpaProm = adsConDatos.reduce((sum,ad) => sum + parseFloat(ad.insights.data[0].cpc||0), 0) / adsConDatos.length;
+        const dcEl = document.getElementById('d-c');
+        if(dcEl) dcEl.textContent = '$'+cpaProm.toFixed(2)+' MXN';
+      }
     } catch(e){
       status.textContent = '❌ Error: '+e.message;
     }
@@ -337,6 +344,17 @@ async function genAudio(){
       set('k-rea', k.reales);
       set('k-com', k.comparadores);
       set('k-qr', k.qualityRating);
+      // Actualizar Dashboard widgets en tiempo real
+      const dz = document.getElementById('d-z');
+      const dr = document.getElementById('d-r');
+      if(dz) dz.textContent = k.zombies+'%';
+      if(dr) dr.textContent = k.reales+'%';
+      // Quality Rating Dashboard
+      const qrEl = document.getElementById('d-qr');
+      if(qrEl) { 
+        qrEl.textContent = k.qualityRating;
+        qrEl.style.color = k.qualityRating==='VERDE' ? '#4CAF50' : k.qualityRating==='AMARILLO' ? '#FFC107' : '#f44336';
+      }
       if(status) status.textContent = '✅ '+k.totalSemana+' leads cargados – '+new Date().toLocaleTimeString();
     } catch(e){
       if(status) status.textContent = '❌ Error: '+e.message;
