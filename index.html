@@ -250,6 +250,28 @@ function testKommo(){
   document.getElementById('ks').className='badge bg-yellow';document.getElementById('ks').textContent='Verificando...';
   setTimeout(()=>{document.getElementById('ks').className='badge bg-green';document.getElementById('ks').textContent='Conectado - miriamarechiga';},1500);
 }
+
+async function genAudio(){
+  const script = document.getElementById('audio-script').value;
+  const voiceId = document.getElementById('voice-id').value;
+  const modelId = document.getElementById('el-model').value;
+  const status = document.getElementById('audio-status');
+  if(!script){status.textContent='Pega un script primero';return;}
+  status.textContent='Generando audio...';
+  try{
+    const r = await fetch('/api/elevenlabs',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'text_to_speech',text:script,voice_id:voiceId,model_id:modelId})
+    });
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    document.getElementById('audio-el').src = url;
+    document.getElementById('audio-dl').href = url;
+    document.getElementById('audio-player').style.display='block';
+    status.textContent='Audio listo';
+  }catch(e){status.textContent='Error: '+e.message;}
+}
 </script>
 </body>
 </html>
