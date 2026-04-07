@@ -98,7 +98,9 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 
 <div id="tab-intel" class="tab">
 <div class="stitle">&#129504; Intelligence V2 - Dual Layer</div>
-<div class="card" style="margin-bottom:16px"><div class="ct">BLOQUE META - Datos de Meta Ads Manager</div><textarea id="meta-data" rows="5" placeholder="Campana, Ad, Capa AI/EOV/MARCA/IM/COMP, Gasto MXN, CTR, CPA, Resultados..."></textarea></div>
+<div class="card" style="margin-bottom:16px"><div class="ct">BLOQUE META - Datos de Meta Ads Manager</div><textarea id="meta-data" rows="5" placeholder="Campana, Ad, Capa AI/EOV/MARCA/IM/COMP, Gasto MXN, CTR, CPA, Resultados..."></textarea>
+<button class="btn bs" onclick="loadMetaData()" style="margin-top:8px;width:100%" id="meta-load-btn">📊 Cargar métricas reales de Meta</button>
+<div id="meta-load-status" style="font-size:11px;color:#888;margin-top:4px"></div></div>
 <div class="card" style="margin-bottom:16px"><div class="ct">BLOQUE KOMMO - Lead Quality Signal (Paty)</div>
 <div class="il">
 <div><label>Total leads semana</label><input type="number" id="k-tot" placeholder="45"></div>
@@ -272,6 +274,46 @@ async function genAudio(){
     status.textContent='Audio listo';
   }catch(e){status.textContent='Error: '+e.message;}
 }
+
+  async function loadMetaData(){
+    const btn = document.getElementById('meta-load-btn');
+    const status = document.getElementById('meta-load-status');
+    const textarea = document.getElementById('meta-data');
+    btn.disabled = true;
+    btn.textContent = '⏳ Cargando...';
+    status.textContent = '';
+    try {
+      const r = await fetch('/api/meta');
+      const d = await r.json();
+      if(d.error) throw new Error(d.error.message);
+      if(!d.data || d.data.length === 0){
+        status.textContent = '⚠️ Sin ads activos en la cuenta';
+        btn.disabled = false;
+        btn.textContent = '📊 Cargar métricas reales de Meta';
+        return;
+      }
+      let lines = [];
+      d.data.forEach(ad => {
+        const ins = ad.insights && ad.insights.data && ad.insights.data[0];
+        if(ins){
+          const ctr = parseFloat(ins.ctr||0).toFixed(2);
+          const cpc = parseFloat(ins.cpc||0).toFixed(2);
+          const spend = parseFloat(ins.spend||0).toFixed(0);
+          const impr = parseInt(ins.impressions||0).toLocaleString();
+          const clicks = parseInt(ins.clicks||0).toLocaleString();
+          lines.push(ad.name+' | Gasto: $'+spend+' MXN | CTR: '+ctr+'% | CPC: $'+cpc+' | Imp: '+impr+' | Clicks: '+clicks);
+        } else {
+          lines.push(ad.name+' | Sin datos de insights (ad inactivo o sin gasto)');
+        }
+      });
+      textarea.value = lines.join('\n');
+      status.textContent = '✅ '+d.data.length+' ads cargados – '+new Date().toLocaleTimeString();
+    } catch(e){
+      status.textContent = '❌ Error: '+e.message;
+    }
+    btn.disabled = false;
+    btn.textContent = '📊 Cargar métricas reales de Meta';
+  }
 </script>
 </body>
 </html>
