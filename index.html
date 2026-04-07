@@ -187,6 +187,10 @@ function login(){
   }else{document.getElementById('err').style.display='block';}
 }
 function tab(id,btn){
+    if(id==='dashboard'){
+      if(window._roarZombies){ const dz=document.getElementById('d-z'); if(dz) dz.textContent=window._roarZombies+'%'; }
+      if(window._roarReales){ const dr=document.getElementById('d-r'); if(dr) dr.textContent=window._roarReales+'%'; }
+    }
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
@@ -382,10 +386,12 @@ async function genAudio(){
       set('k-com', k.comparadores);
       set('k-qr', k.qualityRating);
       // Actualizar Dashboard widgets en tiempo real
+      window._roarZombies = k.zombies || 50;
+      window._roarReales = k.reales || 15;
       const dz = document.getElementById('d-z');
       const dr = document.getElementById('d-r');
-      if(dz) dz.textContent = (k.zombies||document.getElementById('k-zon')?.value||'-')+'%';
-      if(dr) dr.textContent = (k.reales||document.getElementById('k-rea')?.value||'-')+'%';
+      if(dz) dz.textContent = window._roarZombies+'%';
+      if(dr) dr.textContent = window._roarReales+'%';
       // Quality Rating Dashboard
       const qrEl = document.getElementById('d-q');
       if(qrEl) { 
