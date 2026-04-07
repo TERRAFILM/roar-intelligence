@@ -258,7 +258,26 @@ async function genCreativo(){
 Segmento: ${segs[document.getElementById('seg').value]}, Capa: ${document.getElementById('capa').value}, Hook: ${document.getElementById('ang').value}
 REGLAS ANDROMEDA: bolsa=protagonista, primeros 3s=entorno negocio, senal volumen visual.
 Genera PACK COMPLETO: 1)PROMPT IMAGEN ElevenLabs 9:16 2)SCRIPT HEYGEN 45seg documental mexicano 3)COPY 3 variantes Hook+Valor+CTA 4)CAPCUT instrucciones. Max 450 palabras.`;
-  try{const r=await claude(p);out.textContent=r;}catch(e){out.textContent='Error: '+e.message;}
+  try{
+    const r=await claude(p);
+    out.textContent=r;
+    // Auto-guardar en Bitácora
+    setTimeout(() => {
+      const entry = {
+        fecha: new Date().toLocaleDateString('es-MX'),
+        hora: new Date().toLocaleTimeString('es-MX'),
+        semana: bitacoraEntries.length + 1,
+        leadsReales: document.getElementById('k-rea')?.value || '-',
+        zombies: document.getElementById('k-zon')?.value || '-',
+        cpa: document.getElementById('d-c')?.textContent || '-',
+        qualityRating: document.getElementById('k-qr')?.value || '-',
+        andromeda: document.getElementById('d-a')?.textContent || '-',
+        diagnostico: r.substring(0, 300),
+        acciones: document.querySelectorAll('.ac-info')?.length + ' acciones generadas'
+      };
+      if(typeof saveBitacoraEntry === 'function') saveBitacoraEntry(entry);
+    }, 1500);
+  }catch(e){out.textContent='Error: '+e.message;}
 }
 function testMeta(){
   document.getElementById('ms').className='badge bg-yellow';document.getElementById('ms').textContent='Verificando...';
@@ -543,27 +562,6 @@ async function genAudio(){
     renderBitacora();
   }
 
-  // Auto-registro al correr Intelligence V2
-  const _origRunIntel = runIntel;
-  async function runIntel(){
-    await _origRunIntel();
-    // Capturar datos actuales post-análisis
-    setTimeout(() => {
-      const entry = {
-        fecha: new Date().toLocaleDateString('es-MX'),
-        hora: new Date().toLocaleTimeString('es-MX'),
-        semana: bitacoraEntries.length + 1,
-        leadsReales: document.getElementById('k-rea')?.value || document.getElementById('d-r')?.textContent?.replace('%','') || '-',
-        zombies: document.getElementById('k-zon')?.value || document.getElementById('d-z')?.textContent?.replace('%','') || '-',
-        cpa: document.getElementById('d-c')?.textContent || '-',
-        qualityRating: document.getElementById('k-qr')?.value || '-',
-        andromeda: document.getElementById('d-a')?.textContent || '-',
-        diagnostico: document.getElementById('intel-out')?.innerText?.substring(0,300) || 'Sin diagnóstico',
-        acciones: document.querySelectorAll('.ac-info')?.length + ' acciones generadas'
-      };
-      saveBitacoraEntry(entry);
-    }, 2000);
-  }
 
   // Inicializar bitácora al cargar
   document.addEventListener('DOMContentLoaded', renderBitacora);
