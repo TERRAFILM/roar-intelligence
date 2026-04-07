@@ -262,21 +262,27 @@ Genera PACK COMPLETO: 1)PROMPT IMAGEN ElevenLabs 9:16 2)SCRIPT HEYGEN 45seg docu
     const r=await claude(p);
     out.textContent=r;
     // Auto-guardar en Bitácora
-    setTimeout(() => {
+    try {
       const entry = {
         fecha: new Date().toLocaleDateString('es-MX'),
         hora: new Date().toLocaleTimeString('es-MX'),
-        semana: bitacoraEntries.length + 1,
+        semana: (window.bitacoraEntries||[]).length + 1,
         leadsReales: document.getElementById('k-rea')?.value || '-',
         zombies: document.getElementById('k-zon')?.value || '-',
         cpa: document.getElementById('d-c')?.textContent || '-',
         qualityRating: document.getElementById('k-qr')?.value || '-',
         andromeda: document.getElementById('d-a')?.textContent || '-',
-        diagnostico: r.substring(0, 300),
+        diagnostico: r.substring(0, 400),
         acciones: document.querySelectorAll('.ac-info')?.length + ' acciones generadas'
       };
-      if(typeof saveBitacoraEntry === 'function') saveBitacoraEntry(entry);
-    }, 1500);
+      if(window.bitacoraEntries === undefined) window.bitacoraEntries = [];
+      window.bitacoraEntries.unshift(entry);
+      localStorage.setItem('roar_bitacora', JSON.stringify(window.bitacoraEntries));
+      if(typeof renderBitacora === 'function') renderBitacora();
+      // Feedback visual
+      const bTab = document.querySelector('[onclick*="bitacora"]');
+      if(bTab){ bTab.style.animation='pulse 0.5s'; setTimeout(()=>bTab.style.animation='',500); }
+    } catch(be){ console.log('Bitacora error:', be); }
   }catch(e){out.textContent='Error: '+e.message;}
 }
 function testMeta(){
@@ -493,7 +499,8 @@ async function genAudio(){
 
 
   // ============ BITÁCORA ============
-  let bitacoraEntries = JSON.parse(localStorage.getItem('roar_bitacora') || '[]');
+  window.bitacoraEntries = JSON.parse(localStorage.getItem('roar_bitacora') || '[]');
+  let bitacoraEntries = window.bitacoraEntries;
 
   function saveBitacoraEntry(entry){
     bitacoraEntries.unshift(entry);
