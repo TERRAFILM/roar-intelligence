@@ -117,7 +117,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 </div>
 <button class="btn bp" onclick="runIntel()">&#129504; Correr Intelligence V2</button>
 <div class="card" style="margin-top:16px"><div class="ct">ANALISIS INTELLIGENCE</div><div class="out" id="intel-out">Ingresa datos y presiona Correr Intelligence V2...</div>
-<button class="btn bs" id="save-bitacora-btn" onclick="guardarEnBitacora()" style="display:none;margin-top:8px;width:100%">📓 Guardar análisis en Bitácora</button>
+<button class="btn bs" id="save-bitacora-btn" onclick="guardarEnBitacora()" style="margin-top:8px;width:100%">📓 Guardar análisis en Bitácora</button>
 <div id="save-bitacora-status" style="font-size:11px;color:#888;margin-top:4px"></div></div>
 </div>
 
@@ -198,7 +198,6 @@ async function claude(prompt){
 }
 async function runIntel(){
   const out=document.getElementById('intel-out');
-  document.getElementById('save-bitacora-btn').style.display='none';
   out.innerHTML='Corriendo Intelligence V2...';
   const p=`Eres ROAR Intelligence V2. Analiza estos datos duales:
 META: ${document.getElementById('meta-data').value}
@@ -209,7 +208,6 @@ Genera: 1)DIAGNOSTICO DUAL 2)LOOPS TRAMPA 3)SCORECARD CAPAS 4)ACCIONES(pausar/es
   try{
     const r=await claude(p);
     out.textContent=r;
-    document.getElementById('save-bitacora-btn').style.display='block';
     window._lastAnalysis = r;
     document.getElementById('d-r').textContent=(document.getElementById('k-rea').value||'-')+'%';
     document.getElementById('d-z').textContent=(document.getElementById('k-zom').value||'-')+'%';
@@ -266,7 +264,6 @@ Genera PACK COMPLETO: 1)PROMPT IMAGEN ElevenLabs 9:16 2)SCRIPT HEYGEN 45seg docu
   try{
     const r=await claude(p);
     out.textContent=r;
-    document.getElementById('save-bitacora-btn').style.display='block';
     window._lastAnalysis = r;
     // Auto-guardar en Bitácora
     try {
@@ -592,7 +589,7 @@ async function genAudio(){
       };
       saveBitacoraEntry(entry);
       status.textContent = '✅ Guardado en Bitácora — Semana '+entry.semana;
-      btn.style.display = 'none';
+
     } catch(e) {
       status.textContent = '❌ Error: '+e.message;
       console.error('Bitacora save error:', e);
