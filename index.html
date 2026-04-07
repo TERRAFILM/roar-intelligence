@@ -384,8 +384,8 @@ async function genAudio(){
       // Actualizar Dashboard widgets en tiempo real
       const dz = document.getElementById('d-z');
       const dr = document.getElementById('d-r');
-      if(dz) dz.textContent = k.zombies+'%';
-      if(dr) dr.textContent = k.reales+'%';
+      if(dz) dz.textContent = (k.zombies||document.getElementById('k-zon')?.value||'-')+'%';
+      if(dr) dr.textContent = (k.reales||document.getElementById('k-rea')?.value||'-')+'%';
       // Quality Rating Dashboard
       const qrEl = document.getElementById('d-q');
       if(qrEl) { 
