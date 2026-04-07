@@ -350,10 +350,17 @@ async function genAudio(){
       if(dz) dz.textContent = k.zombies+'%';
       if(dr) dr.textContent = k.reales+'%';
       // Quality Rating Dashboard
-      const qrEl = document.getElementById('d-qr');
+      const qrEl = document.getElementById('d-q');
       if(qrEl) { 
         qrEl.textContent = k.qualityRating;
         qrEl.style.color = k.qualityRating==='VERDE' ? '#4CAF50' : k.qualityRating==='AMARILLO' ? '#FFC107' : '#f44336';
+      }
+      // Señal Andromeda basada en % zombies
+      const daEl = document.getElementById('d-a');
+      if(daEl) {
+        if(k.zombies > 50){ daEl.textContent = 'CONTAMINADA'; daEl.style.color = '#f44336'; }
+        else if(k.zombies > 30){ daEl.textContent = 'RIESGO'; daEl.style.color = '#FFC107'; }
+        else { daEl.textContent = 'LIMPIA'; daEl.style.color = '#4CAF50'; }
       }
       if(status) status.textContent = '✅ '+k.totalSemana+' leads cargados – '+new Date().toLocaleTimeString();
     } catch(e){
