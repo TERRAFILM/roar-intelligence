@@ -392,7 +392,75 @@ function showAcciones(){
 function aprobar(btn,msg){
   const c=btn.closest('.ac');c.style.opacity='0.5';
   c.querySelector('.abtns').innerHTML='<span class="badge bg-green">OK: '+msg+'</span>';
-  hist(c.querySelector('.at').textContent,'APROBADA');
+  const titulo = c.querySelector('.at').textContent;
+  const detalle = c.querySelector('.ad') ? c.querySelector('.ad').textContent : '';
+  hist(titulo,'APROBADA');
+  // Si es accion de generar creativo -> pre-cargar modulo Creativos
+  const esCreativo = titulo.toLowerCase().includes('creativo') ||
+    titulo.toLowerCase().includes('pack') ||
+    titulo.toLowerCase().includes('generar') ||
+    detalle.toLowerCase().includes('creativo') ||
+    detalle.toLowerCase().includes('heygen') ||
+    detalle.toLowerCase().includes('elevenlabs');
+  if(esCreativo){
+    setTimeout(function(){
+      // Navegar a tab Creativos
+      document.querySelectorAll('.tab').forEach(function(t){ t.style.display='none'; });
+      const tabC = document.getElementById('tab-creativos');
+      if(tabC) tabC.style.display='block';
+      document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+      const btnC = document.querySelector('[onclick*="creativos"]');
+      if(btnC) btnC.classList.add('active');
+      // Extraer segmento y hook del detalle de la accion
+      const segMap = {
+        'carniceria':'Carniceria', 'carnicería':'Carniceria',
+        'marisco':'Mariscos', 'camaron':'Mariscos', 'camarón':'Mariscos',
+        'polleria':'Polleria', 'pollerìa':'Polleria',
+        'lavanderia':'Lavanderia', 'frijol':'Granel', 'industrial':'Industrial'
+      };
+      let segDetectado = '';
+      const textoAccion = (titulo + ' ' + detalle).toLowerCase();
+      for(const key in segMap){
+        if(textoAccion.includes(key)){ segDetectado = segMap[key]; break; }
+      }
+      const capaMap = {
+        'eov':'EOV - Evidencia Operativa', 'evidencia':'EOV - Evidencia Operativa',
+        'ai':'AI - Avatar + Script', 'avatar':'AI - Avatar + Script',
+        'im':'IM - Intencion Media', 'intencion':'IM - Intencion Media',
+        'comp':'COMP - Comparador', 'comparador':'COMP - Comparador',
+        'marca':'MARCA - Branding'
+      };
+      let capaDetectada = 'AI - Avatar + Script';
+      for(const key in capaMap){
+        if(textoAccion.includes(key)){ capaDetectada = capaMap[key]; break; }
+      }
+      // Pre-cargar campos
+      const segEl = document.getElementById('creat-seg');
+      const capaEl = document.getElementById('creat-capa');
+      const hookEl = document.getElementById('creat-hook');
+      if(segEl && segDetectado){
+        for(let i=0;i<segEl.options.length;i++){
+          if(segEl.options[i].value.toLowerCase().includes(segDetectado.toLowerCase())){
+            segEl.selectedIndex=i; break;
+          }
+        }
+      }
+      if(capaEl && capaDetectada){
+        for(let i=0;i<capaEl.options.length;i++){
+          if(capaEl.options[i].text.toLowerCase().includes(capaDetectada.toLowerCase().split(' ')[0])){
+            capaEl.selectedIndex=i; break;
+          }
+        }
+      }
+      if(hookEl){ hookEl.value = titulo + ' — ' + detalle; hookEl.focus(); }
+      // Notificar
+      const banner = document.createElement('div');
+      banner.style.cssText='position:fixed;top:60px;right:20px;background:#ff6b35;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:bold;z-index:9999;';
+      banner.textContent='✅ Accion aprobada — Creativos pre-cargado';
+      document.body.appendChild(banner);
+      setTimeout(function(){ banner.remove(); }, 3000);
+    }, 400);
+  }
 }
 function rechazar(btn){
   const c=btn.closest('.ac');c.style.opacity='0.5';
