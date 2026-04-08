@@ -3,40 +3,84 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
   try {
-    const token = process.env.META_ACCESS_TOKEN;
     const { keywords, country, limit } = req.body || {};
-
-    const searchTerms = keywords || 'bolsas plastico';
+    const searchTerms = encodeURIComponent(keywords || 'bolsas plastico');
     const countryCode = country || 'MX';
     const maxResults = limit || 20;
 
-    const url = 'https://graph.facebook.com/v19.0/ads_archive?' +
-      'access_token=' + token +
-      '&fields=id,ad_creative_body,ad_creative_link_caption,ad_creative_link_description,ad_creative_link_title,ad_delivery_start_time,ad_snapshot_url,page_name,spend,impressions,currency,ad_creative_bodies,ad_creative_link_titles,ad_creative_link_descriptions' +
-      '&search_terms=' + encodeURIComponent(searchTerms) +
-      '&ad_reached_countries=[%22' + countryCode + '%22]' +
-      '&ad_active_status=ALL' +
-      '&limit=' + maxResults + '&publisher_platforms=[%22facebook%22,%22instagram%22]';
+    // Meta Ads Library publica — no requiere permisos especiales
+    const url = 'https://www.facebook.com/ads/library/async/search_ads/?' +
+      'q=' + searchTerms +
+      '&count=' + maxResults +
+      '&active_status=active' +
+      '&ad_type=all' +
+      '&country=' + countryCode +
+      '&v=0&search_type=keyword_unordered&media_type=all';
 
-    const r = await fetch(url);
-    const d = await r.json();
+    const r = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'es-MX,es;q=0.9',
+        'Referer': 'https://www.facebook.com/ads/library/',
+        'X-FB-Friendly-Name': 'AdLibrarySearchV2Query'
+      }
+    });
 
-    if(d.error) return res.status(200).json({ error: d.error.message, data: [] });
+    const text = await r.text();
 
-    const ads = (d.data || []).map(ad => ({
-      id: ad.id,
-      page: ad.page_name || 'Desconocido',
-      body: ad.ad_creative_body || (ad.ad_creative_bodies && ad.ad_creative_bodies[0]) || '',
-      title: ad.ad_creative_link_title || (ad.ad_creative_link_titles && ad.ad_creative_link_titles[0]) || '',
-      description: ad.ad_creative_link_description || (ad.ad_creative_link_descriptions && ad.ad_creative_link_descriptions[0]) || '',
-      since: ad.ad_delivery_start_time || '',
-      snapshot: ad.ad_snapshot_url || '',
-      spend: ad.spend || null,
-      impressions: ad.impressions || null
-    }));
+    // Intentar parsear JSON
+    let data;
+    try {
+      // Facebook a veces devuelve con prefijo de seguridad
+      const cleaned = text.replace(/^for\s*\(;\s*;\s*\)\s*;/, '').trim();
+      data = JSON.parse(cleaned);
+    } catch(e) {
+      // Si falla el parse, devolver URL directa para que el usuario consulte manualmente
+      return res.status(200).json({
+        total: 0,
+        data: [],
+        fallback: true,
+        url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=' + countryCode + '&q=' + searchTerms + '&search_type=keyword_unordered&media_type=all',
+        message: 'Meta Ads Library requiere acceso directo via navegador. Usa el enlace para ver los anuncios.'
+      });
+    }
+
+    const ads = [];
+    if(data && data.payload && data.payload.results) {
+      data.payload.results.forEach(ad => {
+        ads.push({
+          id: ad.adArchiveID || ad.ad_id || '',
+          page: ad.pageName || ad.page_name || 'Desconocido',
+          body: (ad.snapshot && ad.snapshot.body && ad.snapshot.body.text) || ad.ad_creative_body || '',
+          title: (ad.snapshot && ad.snapshot.title) || ad.ad_creative_link_title || '',
+          description: (ad.snapshot && ad.snapshot.link_description) || '',
+          since: ad.startDate || ad.ad_delivery_start_time || '',
+          snapshot: 'https://www.facebook.com/ads/library/?id=' + (ad.adArchiveID || ad.ad_id || '')
+        });
+      });
+    }
+
+    if(ads.length === 0) {
+      return res.status(200).json({
+        total: 0,
+        data: [],
+        fallback: true,
+        url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=' + countryCode + '&q=' + encodeURIComponent(keywords || 'bolsas plastico') + '&search_type=keyword_unordered&media_type=all',
+        message: 'Abre el enlace para ver los anuncios activos en Meta Ads Library.'
+      });
+    }
 
     return res.status(200).json({ total: ads.length, data: ads });
   } catch(err) {
-    return res.status(500).json({ error: err.message });
+    const keywords = req.body && req.body.keywords ? req.body.keywords : 'bolsas plastico';
+    const country = req.body && req.body.country ? req.body.country : 'MX';
+    return res.status(200).json({
+      total: 0,
+      data: [],
+      fallback: true,
+      url: 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=' + country + '&q=' + encodeURIComponent(keywords) + '&search_type=keyword_unordered&media_type=all',
+      message: 'Abre el enlace para ver los anuncios activos en Meta Ads Library.'
+    });
   }
 };

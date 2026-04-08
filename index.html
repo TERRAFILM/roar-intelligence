@@ -891,6 +891,18 @@ async function genAudio(){
         return;
       }
 
+      if(d.fallback){
+        status.textContent = '';
+        results.innerHTML = '<div style="border:1px solid #ff6b35;border-radius:8px;padding:16px;background:#1a1a1a">' +
+          '<div style="color:#ff6b35;font-weight:bold;margin-bottom:8px">📋 ' + d.message + '</div>' +
+          '<a href="' + d.url + '" target="_blank" style="display:block;background:#ff6b35;color:#fff;padding:10px 16px;border-radius:6px;text-align:center;font-weight:bold;text-decoration:none;margin-bottom:12px">🔍 Abrir Meta Ads Library</a>' +
+          '<div style="font-size:11px;color:#666">La busqueda ya viene pre-configurada con tus palabras clave y pais seleccionado.</div>' +
+          '</div>';
+        document.getElementById('comp-analisis').style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = '🔍 Buscar anuncios activos';
+        return;
+      }
       status.textContent = d.total + ' anuncios activos encontrados para: ' + keywords;
       window._compAds = d.data;
 
