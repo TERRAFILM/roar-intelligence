@@ -187,7 +187,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
   <button class="btn bp" onclick="analizarCompetencia()" style="width:100%">&#129504; Analizar patrones con Claude</button>
   <div class="out" id="comp-analisis-status" style="margin-top:8px;display:none">Pegando anuncios y presiona Analizar...</div>
 </div>
-<div id="comp-analisis" style="display:block">
+<div id="comp-analisis" style="display:none">
   <div class="card" style="margin-top:16px">
     <div class="ct">&#129504; ANALISIS CLAUDE — PATRONES DEL MERCADO</div>
     <div class="out" id="comp-analisis-out">Carga anuncios primero y presiona Analizar...</div>
@@ -971,7 +971,7 @@ async function genAudio(){
         body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:p}] })
       });
       const d = await r.json();
-      out.textContent = d.content[0].text; out.style.display='block';
+      document.getElementById('comp-analisis').style.display='block'; out.textContent = d.content[0].text; out.style.display='block';
     } catch(e){
       out.textContent = 'Error: ' + e.message;
     }
