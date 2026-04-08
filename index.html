@@ -75,6 +75,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <button class="nb" onclick="tab('acciones',this)">&#9889; Acciones</button>
 <button class="nb" onclick="tab('creativos',this)">&#127916; Creativos</button>
 <button class="nb" onclick="tab('bitacora',this)">&#128221; Bitácora</button>
+<button class="nb" onclick="tab('competitiva',this)">&#128269; Competencia</button>
 </nav>
 </div>
 <div class="content">
@@ -147,6 +148,45 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <div class="sep"></div>
 <div class="stitle">Historial</div>
 <div id="hist-list" style="font-size:12px;color:#666">Sin acciones registradas.</div>
+</div>
+
+<div id="tab-competitiva" class="tab">
+<div class="stitle">&#128269; Inteligencia Competitiva</div>
+<div class="card" style="margin-bottom:16px">
+  <div class="ct">BUSCAR ANUNCIOS ACTIVOS EN META ADS LIBRARY</div>
+  <p style="font-size:11px;color:#666;margin-bottom:12px">Monitorea que mensajes y creativos estan corriendo ahora mismo en el mercado. No para copiar — para entender patrones que venden.</p>
+  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+    <input type="text" id="comp-keywords" placeholder="Palabras clave. Ej: bolsas carniceria, empaque plastico..." style="flex:1;min-width:200px;background:#111;color:#fff;border:1px solid #333;padding:8px;border-radius:6px;font-size:12px">
+    <select id="comp-country" style="background:#111;color:#fff;border:1px solid #333;padding:8px;border-radius:6px;font-size:12px">
+      <option value="MX">Mexico</option>
+      <option value="US">USA</option>
+      <option value="CO">Colombia</option>
+      <option value="AR">Argentina</option>
+    </select>
+    <select id="comp-limit" style="background:#111;color:#fff;border:1px solid #333;padding:8px;border-radius:6px;font-size:12px">
+      <option value="10">10 anuncios</option>
+      <option value="20" selected>20 anuncios</option>
+      <option value="50">50 anuncios</option>
+    </select>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+    <button class="btn bs" onclick="setCompKeywords('bolsas plastico mexico')" style="font-size:11px">Bolsas plastico</button>
+    <button class="btn bs" onclick="setCompKeywords('bolsas carniceria')" style="font-size:11px">Carniceria</button>
+    <button class="btn bs" onclick="setCompKeywords('bolsas mariscos empaque')" style="font-size:11px">Mariscos</button>
+    <button class="btn bs" onclick="setCompKeywords('empaque industrial guadalajara')" style="font-size:11px">Industrial GDL</button>
+    <button class="btn bs" onclick="setCompKeywords('bolsas polietileno mayoreo')" style="font-size:11px">Mayoreo</button>
+  </div>
+  <button class="btn bp" onclick="buscarCompetencia()" id="comp-btn" style="width:100%;margin-bottom:8px">&#128269; Buscar anuncios activos</button>
+  <div id="comp-status" style="font-size:11px;color:#888;margin-bottom:8px"></div>
+</div>
+<div id="comp-results"></div>
+<div id="comp-analisis" style="display:none">
+  <div class="card" style="margin-top:16px">
+    <div class="ct">&#129504; ANALISIS CLAUDE — PATRONES DEL MERCADO</div>
+    <div class="out" id="comp-analisis-out">Carga anuncios primero y presiona Analizar...</div>
+    <button class="btn bp" onclick="analizarCompetencia()" style="width:100%;margin-top:8px">&#129504; Analizar patrones con Claude</button>
+  </div>
+</div>
 </div>
 
 <div id="tab-bitacora" class="tab">
@@ -813,6 +853,102 @@ async function genAudio(){
       result.textContent = d.text || JSON.stringify(d);
       status.textContent = 'Transcripcion lista';
     } catch(e){ status.textContent = 'Error: '+e.message; }
+  }
+
+
+  // ============ INTELIGENCIA COMPETITIVA ============
+  function setCompKeywords(kw){
+    document.getElementById('comp-keywords').value = kw;
+  }
+
+  async function buscarCompetencia(){
+    const btn = document.getElementById('comp-btn');
+    const status = document.getElementById('comp-status');
+    const results = document.getElementById('comp-results');
+    const keywords = document.getElementById('comp-keywords').value || 'bolsas plastico';
+    const country = document.getElementById('comp-country').value;
+    const limit = document.getElementById('comp-limit').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Buscando...';
+    status.textContent = '';
+    results.innerHTML = '';
+    document.getElementById('comp-analisis').style.display = 'none';
+
+    try {
+      const r = await fetch('/api/competitive', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ keywords, country, limit: parseInt(limit) })
+      });
+      const d = await r.json();
+
+      if(d.error) throw new Error(d.error);
+      if(!d.data || d.data.length === 0){
+        status.textContent = 'Sin anuncios activos para esa busqueda. Intenta otras palabras clave.';
+        btn.disabled = false;
+        btn.textContent = 'Buscar anuncios activos';
+        return;
+      }
+
+      status.textContent = d.total + ' anuncios activos encontrados para: ' + keywords;
+      window._compAds = d.data;
+
+      results.innerHTML = d.data.map((ad, i) => '<div style="border:1px solid #333;border-radius:8px;padding:14px;margin-bottom:10px;background:#1a1a1a">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+        '<span style="color:#ff6b35;font-weight:bold;font-size:12px">' + (ad.page || 'Pagina desconocida') + '</span>' +
+        '<span style="font-size:10px;color:#555">Ad #' + (i+1) + '</span>' +
+        '</div>' +
+        (ad.title ? '<div style="color:#fff;font-size:13px;font-weight:bold;margin-bottom:4px">' + ad.title + '</div>' : '') +
+        (ad.body ? '<div style="color:#aaa;font-size:12px;margin-bottom:6px;line-height:1.5">' + ad.body.substring(0,300) + (ad.body.length > 300 ? '...' : '') + '</div>' : '') +
+        (ad.description ? '<div style="color:#666;font-size:11px;margin-bottom:6px">' + ad.description + '</div>' : '') +
+        (ad.since ? '<div style="font-size:10px;color:#555">Activo desde: ' + new Date(ad.since).toLocaleDateString("es-MX") + '</div>' : '') +
+        (ad.snapshot ? '<a href="' + ad.snapshot + '" target="_blank" style="font-size:11px;color:#ff6b35;margin-top:6px;display:block">Ver anuncio completo</a>' : '') +
+        '</div>'
+      ).join('');
+
+      document.getElementById('comp-analisis').style.display = 'block';
+
+    } catch(e){
+      status.textContent = 'Error: ' + e.message;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Buscar anuncios activos';
+  }
+
+  async function analizarCompetencia(){
+    const out = document.getElementById('comp-analisis-out');
+    if(!window._compAds || window._compAds.length === 0){
+      out.textContent = 'Busca anuncios primero.';
+      return;
+    }
+    out.textContent = 'Analizando patrones...';
+    const resumen = window._compAds.map((ad, i) =>
+      'Ad ' + (i+1) + ' | ' + (ad.page||'?') + ' | Titulo: ' + (ad.title||'-') + ' | Copy: ' + (ad.body||'-').substring(0,150)
+    ).join('\n');
+
+    const p = 'Eres el analista de inteligencia competitiva de ROAR Plasticos GDL. ' +
+      'ROAR vende bolsas 50x70 Cal.170 para carnicerías, marisquerías y negocios locales en Mexico. ' +
+      'Analiza estos ' + window._compAds.length + ' anuncios activos de competidores en Meta Ads Library:\n\n' + resumen + '\n\n' +
+      'Entrega este analisis exacto:\n' +
+      '## 1) HOOKS MAS USADOS (top 3 ganchos del mercado)\n' +
+      '## 2) ANGULOS DE MENSAJE (precio/calidad/problema/solucion — cual domina)\n' +
+      '## 3) FORMATOS DOMINANTES (video/imagen/carrusel)\n' +
+      '## 4) LO QUE NADIE ESTA DICIENDO (oportunidad para ROAR)\n' +
+      '## 5) RECOMENDACION PARA ROAR (como diferenciarse con la Cal.170)\n' +
+      'Max 400 palabras. Directo y accionable.';
+
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:p}] })
+      });
+      const d = await r.json();
+      out.textContent = d.content[0].text;
+    } catch(e){
+      out.textContent = 'Error: ' + e.message;
+    }
   }
 
 </script>
