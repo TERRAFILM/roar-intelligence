@@ -941,7 +941,7 @@ async function genAudio(){
     btn.textContent = 'Buscar anuncios activos';
   }
 
-  async async function analizarCompetencia(){
+  async function analizarCompetencia(){
     const out = document.getElementById('comp-analisis-out');
     const pasteVal = document.getElementById('comp-paste') ? document.getElementById('comp-paste').value.trim() : '';
     if((!window._compAds || window._compAds.length === 0) && !pasteVal){
