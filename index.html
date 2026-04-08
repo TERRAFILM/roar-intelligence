@@ -183,6 +183,26 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
     <button class="btn bs" onclick="checkHeyGenStatus()" style="margin-top:6px;font-size:11px">Verificar estado</button>
     <div id="heygen-video-url" style="margin-top:6px"></div>
   </div>
+<div style="margin-top:12px;border-top:1px solid #333;padding-top:12px">
+  <div class="ct" style="margin-bottom:8px">🎙️ GENERAR AUDIO ELEVENLABS</div>
+  <textarea id="audio-script" rows="3" placeholder="Pega el guion del avatar aqui..." style="width:100%;background:#111;color:#fff;border:1px solid #333;padding:8px;border-radius:6px;font-size:12px;margin-bottom:8px"></textarea>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <select id="voice-id" style="flex:1;background:#111;color:#fff;border:1px solid #333;padding:6px;border-radius:6px;font-size:12px">
+      <option value="pNInz6obpgDQGcFmaJgB">Enrique Mondragon (MX)</option>
+      <option value="VR6AewLTigWG4xSOukaG">Carlos Claro (MX)</option>
+    </select>
+    <select id="el-model" style="flex:1;background:#111;color:#fff;border:1px solid #333;padding:6px;border-radius:6px;font-size:12px">
+      <option value="eleven_multilingual_v2">ElevenLabs V2</option>
+      <option value="eleven_turbo_v2_5">Turbo V2.5</option>
+    </select>
+  </div>
+  <button class="btn bp" onclick="genAudio()" style="width:100%;margin-bottom:8px">🎙️ Generar audio</button>
+  <div id="audio-status" style="font-size:11px;color:#888"></div>
+  <div id="audio-player" style="display:none;margin-top:8px">
+    <audio id="audio-el" controls style="width:100%"></audio>
+    <a id="audio-dl" style="display:block;margin-top:6px;color:#ff6b35;font-size:12px" download="audio_roar.mp3">⬇️ Descargar audio</a>
+  </div>
+</div>
 </div></div>
 </div>
 
