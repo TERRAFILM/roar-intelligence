@@ -244,6 +244,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
   <button class="btn bp" onclick="correrAuditoriaROAR()" id="auditoria-btn" style="width:100%;margin-bottom:8px">🔍 Correr Auditoria ROAR</button>
   <div class="out" id="auditoria-out" style="display:none;margin-top:8px"></div>
   <div id="auditoria-sku" style="display:none;margin-top:8px;padding:10px;background:#1a1a1a;border:1px solid #ff6b35;border-radius:6px;font-size:12px"></div>
+  <button id="producir-btn" class="btn bp" onclick="producirConSKU()" style="width:100%;margin-top:8px;display:none;background:#00C853">🚀 Producir — Enviar a ElevenLabs + HeyGen</button>
   <button id="regenerar-btn" class="btn bs" onclick="regenerarConCorrecciones()" style="width:100%;margin-top:8px;display:none">🔄 Regenerar pack con correcciones</button>
 </div>
 <div id="heygen-panel" style="margin-top:12px;border-top:1px solid #333;padding-top:12px">
@@ -1076,7 +1077,50 @@ async function genAudio(){
     btn.textContent = 'Buscar anuncios activos';
   }
 
-  async function regenerarConCorrecciones(){
+  async function producirConSKU(){
+  const packText = document.getElementById('creat-out') ? document.getElementById('creat-out').innerText : '';
+  const skuDiv = document.getElementById('auditoria-sku');
+  const sku = skuDiv ? skuDiv.textContent : '';
+
+  // Extraer script HeyGen del pack
+  const scriptMatch = packText.match(/SCRIPT HEYGEN[^
+]*
+([\s\S]*?)(?=##|COPY|$)/i);
+  const script = scriptMatch ? scriptMatch[1].trim().substring(0, 800) : '';
+
+  // Extraer prompt ElevenLabs del pack
+  const promptMatch = packText.match(/PROMPT IMAGEN[^
+]*
+([\s\S]*?)(?=##|SCRIPT|$)/i);
+  const promptEL = promptMatch ? promptMatch[1].trim().substring(0, 600) : '';
+
+  // Pre-llenar guion avatar en ElevenLabs TTS
+  const ttsArea = document.getElementById('el-tts-text') ||
+    document.querySelector('textarea[placeholder*="Guion"]') ||
+    document.querySelector('textarea[placeholder*="guion"]');
+  if(ttsArea && script){ ttsArea.value = script; }
+
+  // Pre-llenar prompt imagen en ElevenLabs Imagen
+  const imgArea = document.getElementById('el-img-prompt') ||
+    document.querySelector('textarea[placeholder*="prompt"]') ||
+    document.querySelector('textarea[placeholder*="Prompt"]');
+  if(imgArea && promptEL){ imgArea.value = promptEL; }
+
+  // Scroll al panel HeyGen
+  const heygenPanel = document.getElementById('heygen-panel');
+  if(heygenPanel){
+    heygenPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Banner con SKU
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:60px;right:20px;background:#00C853;color:#fff;padding:12px 20px;border-radius:8px;font-size:12px;font-weight:bold;z-index:9999;max-width:300px;';
+  banner.innerHTML = '🚀 Listo para producir<br><span style="font-family:monospace;font-size:11px">' + sku + '</span><br><span style="font-size:10px;opacity:0.8">Script pre-cargado en ElevenLabs TTS</span>';
+  document.body.appendChild(banner);
+  setTimeout(function(){ banner.remove(); }, 5000);
+}
+
+async function regenerarConCorrecciones(){
   const audOut = document.getElementById('auditoria-out');
   const packOut = document.getElementById('creat-out');
   const segVal = document.getElementById('creat-seg') ? document.getElementById('creat-seg').value : '';
@@ -1199,6 +1243,8 @@ async function correrAuditoriaROAR(){
       skuDiv.innerHTML = '<span style="color:#ff6b35;font-weight:bold">SKU GENERADO:</span> ' +
         '<span style="color:#fff;font-family:monospace;font-size:14px">' + skuMatch[1] + '</span>' +
         '<br><span style="color:#888;font-size:11px">Usar este nombre al subir a Meta Ads Manager</span>';
+      const producirBtn = document.getElementById('producir-btn');
+      if(producirBtn) producirBtn.style.display = 'block';
     }
   } catch(e) {
     out.textContent = 'Error: ' + e.message;
