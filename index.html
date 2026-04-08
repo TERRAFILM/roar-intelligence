@@ -244,6 +244,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
   <button class="btn bp" onclick="correrAuditoriaROAR()" id="auditoria-btn" style="width:100%;margin-bottom:8px">🔍 Correr Auditoria ROAR</button>
   <div class="out" id="auditoria-out" style="display:none;margin-top:8px"></div>
   <div id="auditoria-sku" style="display:none;margin-top:8px;padding:10px;background:#1a1a1a;border:1px solid #ff6b35;border-radius:6px;font-size:12px"></div>
+  <button id="regenerar-btn" class="btn bs" onclick="regenerarConCorrecciones()" style="width:100%;margin-top:8px;display:none">🔄 Regenerar pack con correcciones</button>
 </div>
 <div id="heygen-panel" style="margin-top:12px;border-top:1px solid #333;padding-top:12px">
   <div class="ct" style="margin-bottom:8px">🎬 ENVIAR A HEYGEN</div>
@@ -994,7 +995,53 @@ async function genAudio(){
     btn.textContent = 'Buscar anuncios activos';
   }
 
-  async function correrAuditoriaROAR(){
+  async function regenerarConCorrecciones(){
+  const audOut = document.getElementById('auditoria-out');
+  const packOut = document.getElementById('creat-out');
+  const segVal = document.getElementById('creat-seg') ? document.getElementById('creat-seg').value : '';
+  const capaVal = document.getElementById('creat-capa') ? document.getElementById('creat-capa').value : '';
+  const hookVal = document.getElementById('creat-hook') ? document.getElementById('creat-hook').value : '';
+  const correcciones = audOut ? audOut.textContent : '';
+  if(!correcciones){ alert('Corre la auditoria primero.'); return; }
+
+  const btn = document.getElementById('regenerar-btn');
+  btn.textContent = 'Regenerando...'; btn.disabled = true;
+  packOut.textContent = 'Regenerando pack con correcciones...';
+
+  const p = 'Eres el sistema creativo de ROAR Plasticos GDL. Bolsa 50x70 La que no te deja tirado.' +
+    ' Segmento: ' + segVal + ' | Capa: ' + capaVal + ' | Hook original: ' + hookVal +
+    ' AUDITORIA ANTERIOR DETECTO ESTOS FALLOS — CORREGIR TODOS:' + correcciones.substring(0, 800) +
+    ' INSTRUCCION: Genera un pack NUEVO corrigiendo TODOS los fallos detectados.' +
+    ' REGLAS ANDROMEDA OBLIGATORIAS: bolsa protagonista 0-3s, problema ANTES que solucion,' +
+    ' vocabulario operador (se truena/desfonda/revienta), CTA especifico a WhatsApp.' +
+    ' ESTRUCTURA: 0-3s solo bolsa + audio problema inmediato SIN avatar.' +
+    ' 3-7s overlay texto problema. 7-12s avatar + solucion + CTA WhatsApp.' +
+    ' Genera PACK COMPLETO: 1) PROMPT IMAGEN ELEVENLABS 9:16, 2) SCRIPT HEYGEN 12-14SEG, 3) COPY META ADS 3 VARIANTES, 4) INSTRUCCIONES CAPCUT.';
+
+  try {
+    const r = await claude(p);
+    packOut.textContent = r;
+    window._lastAnalysis = r;
+    // Reset checklist
+    const audPanel = document.getElementById('auditoria-panel');
+    if(audPanel){
+      ['chk-andromeda','chk-entorno','chk-problema','chk-vocabulario','chk-segmento','chk-estructura','chk-cta'].forEach(function(id){
+        const el = document.getElementById(id);
+        if(el){ el.style.color='#888'; el.textContent=el.textContent.replace('✅','⬜').replace('❌','⬜'); }
+      });
+      const skuDiv = document.getElementById('auditoria-sku');
+      if(skuDiv) skuDiv.style.display='none';
+      audOut.style.display='none';
+      audOut.textContent='';
+      document.getElementById('regenerar-btn').style.display='none';
+    }
+  } catch(e){
+    packOut.textContent = 'Error: ' + e.message;
+  }
+  btn.textContent = '🔄 Regenerar pack con correcciones'; btn.disabled = false;
+}
+
+async function correrAuditoriaROAR(){
   const packContent = document.getElementById('creat-out') ? document.getElementById('creat-out').textContent : '';
   if(!packContent || packContent === 'Configura y presiona Generar...'){
     alert('Genera un pack creativo primero.'); return;
@@ -1039,6 +1086,9 @@ async function genAudio(){
     const d = await r.json();
     const resultado = d.content[0].text;
     out.textContent = resultado;
+    // Mostrar boton regenerar si hay fallos
+    const regenBtn = document.getElementById('regenerar-btn');
+    if(regenBtn){ regenBtn.style.display = (resultado.includes('RECHAZADO') || resultado.includes('OBSERVACIONES')) ? 'block' : 'none'; }
 
     const checks = [
       { id: 'chk-andromeda', key: 'ANDROMEDA' },
