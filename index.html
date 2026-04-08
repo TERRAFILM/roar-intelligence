@@ -516,15 +516,6 @@ async function genAudio(){
     }
   }
 
-  // Mostrar panel HeyGen después de generar pack
-  const origGenCreativo = genCreativo;
-  async function genCreativo(){
-    await origGenCreativo();
-    const out = document.getElementById('creat-out');
-    if(out && out.innerText.length > 50){
-      document.getElementById('heygen-panel').style.display = 'block';
-    }
-  }
 
 
   // ============ BITÁCORA ============
