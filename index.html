@@ -185,9 +185,9 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
   <p style="font-size:11px;color:#666;margin-bottom:8px">Abre Ads Library, copia el nombre de pagina y copy de cada anuncio, pegalo aqui y Claude detecta los patrones.</p>
   <textarea id="comp-paste" rows="6" placeholder="Empresa: XYZ Empaques&#10;Copy: Bolsas resistentes para carniceria, 50x70, precio de mayoreo...&#10;&#10;Empresa: ABC Plasticos&#10;Copy: Tu empaque profesional al mejor precio de Guadalajara..." style="width:100%;background:#111;color:#fff;border:1px solid #333;padding:8px;border-radius:6px;font-size:12px;margin-bottom:8px"></textarea>
   <button class="btn bp" onclick="analizarCompetencia()" style="width:100%">&#129504; Analizar patrones con Claude</button>
-  <div class="out" id="comp-analisis-out" style="margin-top:8px;display:none">Pegando anuncios y presiona Analizar...</div>
+  <div class="out" id="comp-analisis-status" style="margin-top:8px;display:none">Pegando anuncios y presiona Analizar...</div>
 </div>
-<div id="comp-analisis" style="display:none">
+<div id="comp-analisis" style="display:block">
   <div class="card" style="margin-top:16px">
     <div class="ct">&#129504; ANALISIS CLAUDE — PATRONES DEL MERCADO</div>
     <div class="out" id="comp-analisis-out">Carga anuncios primero y presiona Analizar...</div>
@@ -941,7 +941,7 @@ async function genAudio(){
     btn.textContent = 'Buscar anuncios activos';
   }
 
-  async function analizarCompetencia(){
+  async async function analizarCompetencia(){
     const out = document.getElementById('comp-analisis-out');
     const pasteVal = document.getElementById('comp-paste') ? document.getElementById('comp-paste').value.trim() : '';
     if((!window._compAds || window._compAds.length === 0) && !pasteVal){
@@ -955,7 +955,7 @@ async function genAudio(){
 
     const p = 'Eres el analista de inteligencia competitiva de ROAR Plasticos GDL. ' +
       'ROAR vende bolsas 50x70 Cal.170 para carnicerías, marisquerías y negocios locales en Mexico. ' +
-      'Analiza estos ' + window._compAds.length + ' anuncios activos de competidores en Meta Ads Library:\n\n' + resumen + '\n\n' +
+      'Analiza estos anuncios activos de competidores en Meta Ads Library:\n\n' + resumen + '\n\n' +
       'Entrega este analisis exacto:\n' +
       '## 1) HOOKS MAS USADOS (top 3 ganchos del mercado)\n' +
       '## 2) ANGULOS DE MENSAJE (precio/calidad/problema/solucion — cual domina)\n' +
