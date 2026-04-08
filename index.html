@@ -230,6 +230,21 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <button class="btn bp" onclick="genCreativo()">&#127916; Generar pack creativo</button>
 </div>
 <div class="card"><div class="ct">PACK CREATIVO - Prompt ElevenLabs + Script HeyGen + Copy</div><div class="out" id="creat-out">Configura y presiona Generar...</div>
+<div id="auditoria-panel" style="margin-top:12px;border-top:1px solid #ff6b35;padding-top:12px;display:none">
+  <div class="ct" style="margin-bottom:8px;color:#ff6b35">🔍 AUDITORIA ROAR — Pre-flight completo</div>
+  <div id="auditoria-checklist" style="margin-bottom:10px;font-size:12px;line-height:1.8">
+    <div id="chk-andromeda" style="color:#888">⬜ Andromeda: bolsa protagonista 0-3s</div>
+    <div id="chk-entorno" style="color:#888">⬜ Entorno negocio visible en primeros 3s</div>
+    <div id="chk-problema" style="color:#888">⬜ Problema antes que producto</div>
+    <div id="chk-vocabulario" style="color:#888">⬜ Vocabulario operador (no tecnicismos)</div>
+    <div id="chk-segmento" style="color:#888">⬜ Giro especifico mencionado</div>
+    <div id="chk-estructura" style="color:#888">⬜ Estructura 0-3s / 3-6s / 6-10s correcta</div>
+    <div id="chk-cta" style="color:#888">⬜ CTA WhatsApp presente</div>
+  </div>
+  <button class="btn bp" onclick="correrAuditoriaROAR()" id="auditoria-btn" style="width:100%;margin-bottom:8px">🔍 Correr Auditoria ROAR</button>
+  <div class="out" id="auditoria-out" style="display:none;margin-top:8px"></div>
+  <div id="auditoria-sku" style="display:none;margin-top:8px;padding:10px;background:#1a1a1a;border:1px solid #ff6b35;border-radius:6px;font-size:12px"></div>
+</div>
 <div id="heygen-panel" style="margin-top:12px;border-top:1px solid #333;padding-top:12px">
   <div class="ct" style="margin-bottom:8px">🎬 ENVIAR A HEYGEN</div>
   <button class="btn bp" onclick="generateHeyGenVideo()" id="heygen-btn" style="width:100%;margin-bottom:8px">🎬 Enviar a HeyGen y generar video</button>
@@ -357,6 +372,9 @@ Genera: 1)DIAGNOSTICO DUAL 2)LOOPS TRAMPA 3)SCORECARD CAPAS 4)ACCIONES(pausar/es
     const r=await claude(p);
     out.textContent=r;
     window._lastAnalysis = r;
+    // Activar panel Auditoria ROAR
+    const audPanel = document.getElementById('auditoria-panel');
+    if(audPanel){ audPanel.style.display='block'; ['chk-andromeda','chk-entorno','chk-problema','chk-vocabulario','chk-segmento','chk-estructura','chk-cta'].forEach(function(id){ const el=document.getElementById(id); if(el){ el.style.color='#888'; el.textContent=el.textContent.replace('✅','⬜').replace('❌','⬜'); } }); const skuDiv=document.getElementById('auditoria-sku'); if(skuDiv) skuDiv.style.display='none'; const audOut=document.getElementById('auditoria-out'); if(audOut) audOut.style.display='none'; }
     document.getElementById('d-r').textContent=(document.getElementById('k-rea').value||'-')+'%';
     document.getElementById('d-z').textContent=(document.getElementById('k-zom').value||'-')+'%';
     document.getElementById('d-q').textContent=document.getElementById('k-qr').value||'-';
@@ -460,6 +478,9 @@ async function genCreativo(){
     const r=await claude(p);
     out.textContent=r;
     window._lastAnalysis = r;
+    // Activar panel Auditoria ROAR
+    const audPanel = document.getElementById('auditoria-panel');
+    if(audPanel){ audPanel.style.display='block'; ['chk-andromeda','chk-entorno','chk-problema','chk-vocabulario','chk-segmento','chk-estructura','chk-cta'].forEach(function(id){ const el=document.getElementById(id); if(el){ el.style.color='#888'; el.textContent=el.textContent.replace('✅','⬜').replace('❌','⬜'); } }); const skuDiv=document.getElementById('auditoria-sku'); if(skuDiv) skuDiv.style.display='none'; const audOut=document.getElementById('auditoria-out'); if(audOut) audOut.style.display='none'; }
     // Auto-guardar en Bitácora
     try {
       const entry = {
@@ -973,7 +994,88 @@ async function genAudio(){
     btn.textContent = 'Buscar anuncios activos';
   }
 
-  async function analizarCompetencia(){
+  async function correrAuditoriaROAR(){
+  const packContent = document.getElementById('creat-out') ? document.getElementById('creat-out').textContent : '';
+  if(!packContent || packContent === 'Configura y presiona Generar...'){
+    alert('Genera un pack creativo primero.'); return;
+  }
+  const btn = document.getElementById('auditoria-btn');
+  const out = document.getElementById('auditoria-out');
+  const skuDiv = document.getElementById('auditoria-sku');
+  btn.textContent = 'Auditando...'; btn.disabled = true;
+  out.style.display = 'block';
+  out.textContent = 'Analizando pack con criterios ROAR...';
+
+  const segVal = document.getElementById('creat-seg') ? document.getElementById('creat-seg').value : '';
+  const capaVal = document.getElementById('creat-capa') ? document.getElementById('creat-capa').value : '';
+  const hookVal = document.getElementById('creat-hook') ? document.getElementById('creat-hook').value : '';
+
+  const p = 'Eres el auditor de creativos de ROAR Plasticos GDL. ' +
+    'Analiza este pack creativo y evalua CADA criterio con APROBADO o FALLO + razon de una linea. ' +
+    'CRITERIOS A EVALUAR:' +
+    ' 1) ANDROMEDA: La bolsa es protagonista visual en 0-3s (no la carne/marisco)' +
+    ' 2) ENTORNO: Hay senales de negocio en primeros 3s (mostrador/bascula/cajas/operacion)' +
+    ' 3) PROBLEMA: El dolor aparece ANTES que la solucion' +
+    ' 4) VOCABULARIO: Usa lenguaje de operador (se truena/desfonda/revienta) NO tecnicismos (polietileno/cal.170)' +
+    ' 5) SEGMENTO: Menciona el giro especifico (carniceria/marisqueria/polleria/etc)' +
+    ' 6) ESTRUCTURA: Sigue 0-3s bolsa / 3-6s problema / 6-10s avatar+CTA' +
+    ' 7) CTA: Hay llamada a accion hacia WhatsApp' +
+    ' PACK A AUDITAR:' + packContent.substring(0, 1500) +
+    ' AL FINAL: VEREDICTO FINAL con una de estas tres opciones:' +
+    ' ✅ APROBADO — listo para produccion' +
+    ' ⚠️ APROBADO CON OBSERVACIONES — puede publicarse con estos ajustes menores: [lista]' +
+    ' ❌ RECHAZADO — corregir antes de producir: [lista de correcciones]' +
+    ' Si APROBADO o APROBADO CON OBSERVACIONES, genera el SKU en este formato exacto:' +
+    ' SKU: CAPA|WA|50x70|Hook3palabras|Segmento|Formato' +
+    ' Ejemplo: AI|WA|50x70|DobleBoIsaFrio|Carniceria|9:16' +
+    ' Max 300 palabras. Directo y accionable.';
+
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: p }] })
+    });
+    const d = await r.json();
+    const resultado = d.content[0].text;
+    out.textContent = resultado;
+
+    const checks = [
+      { id: 'chk-andromeda', key: 'ANDROMEDA' },
+      { id: 'chk-entorno', key: 'ENTORNO' },
+      { id: 'chk-problema', key: 'PROBLEMA' },
+      { id: 'chk-vocabulario', key: 'VOCABULARIO' },
+      { id: 'chk-segmento', key: 'SEGMENTO' },
+      { id: 'chk-estructura', key: 'ESTRUCTURA' },
+      { id: 'chk-cta', key: 'CTA' }
+    ];
+    checks.forEach(function(c) {
+      const el = document.getElementById(c.id);
+      if(el) {
+        if(resultado.includes(c.key + ': APROBADO')) {
+          el.style.color = '#00C853';
+          el.textContent = el.textContent.replace('⬜', '✅');
+        } else if(resultado.includes(c.key + ': FALLO')) {
+          el.style.color = '#FF3D00';
+          el.textContent = el.textContent.replace('⬜', '❌');
+        }
+      }
+    });
+
+    const skuMatch = resultado.match(/SKU:\s*([A-Z|a-z0-9|]+)/);
+    if(skuMatch) {
+      skuDiv.style.display = 'block';
+      skuDiv.innerHTML = '<span style="color:#ff6b35;font-weight:bold">SKU GENERADO:</span> ' +
+        '<span style="color:#fff;font-family:monospace;font-size:14px">' + skuMatch[1] + '</span>' +
+        '<br><span style="color:#888;font-size:11px">Usar este nombre al subir a Meta Ads Manager</span>';
+    }
+  } catch(e) {
+    out.textContent = 'Error: ' + e.message;
+  }
+  btn.textContent = '🔍 Correr Auditoria ROAR'; btn.disabled = false;
+}
+
+async function analizarCompetencia(){
     const out = document.getElementById('comp-analisis-out');
     const pasteVal = document.getElementById('comp-paste') ? document.getElementById('comp-paste').value.trim() : '';
     if((!window._compAds || window._compAds.length === 0) && !pasteVal){
