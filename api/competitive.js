@@ -15,8 +15,8 @@ module.exports = async function handler(req, res) {
       '&fields=id,ad_creative_body,ad_creative_link_caption,ad_creative_link_description,ad_creative_link_title,ad_delivery_start_time,ad_snapshot_url,page_name,spend,impressions,currency,ad_creative_bodies,ad_creative_link_titles,ad_creative_link_descriptions' +
       '&search_terms=' + encodeURIComponent(searchTerms) +
       '&ad_reached_countries=[%22' + countryCode + '%22]' +
-      '&ad_active_status=ACTIVE' +
-      '&limit=' + maxResults;
+      '&ad_active_status=ALL' +
+      '&limit=' + maxResults + '&publisher_platforms=[%22facebook%22,%22instagram%22]';
 
     const r = await fetch(url);
     const d = await r.json();
