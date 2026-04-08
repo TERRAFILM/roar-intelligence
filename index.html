@@ -261,10 +261,35 @@ async function genCreativo(){
   const out=document.getElementById('creat-out');
   out.innerHTML='Generando pack creativo...';
   const segs={carniceria:'carniceria',mariscos:'marisqueria',lavanderia:'lavanderia',granel:'tienda granel',industrial:'industrial'};
-  const p=`Eres el sistema creativo de ROAR Plasticos GDL. Bolsa 50x70 Cal.170 "La que no te deja tirado".
-Segmento: ${segs[document.getElementById('seg').value]}, Capa: ${document.getElementById('capa').value}, Hook: ${document.getElementById('ang').value}
-REGLAS ANDROMEDA: bolsa=protagonista, primeros 3s=entorno negocio, senal volumen visual.
-Genera PACK COMPLETO: 1)PROMPT IMAGEN ElevenLabs 9:16 2)SCRIPT HEYGEN 45seg documental mexicano 3)COPY 3 variantes Hook+Valor+CTA 4)CAPCUT instrucciones. Max 450 palabras.`;
+  const segVal = segs[document.getElementById('seg').value] || document.getElementById('seg').value;
+    const capaVal = document.getElementById('capa').value;
+    const hookVal = document.getElementById('ang').value;
+    const p = 'Eres el sistema creativo de ROAR Plasticos GDL. Bolsa 50x70 Cal.170 La que no te deja tirado.' +
+      ' Segmento: ' + segVal + ' | Capa: ' + capaVal + ' | Hook: ' + hookVal +
+      ' REGLAS ANDROMEDA OBLIGATORIAS: LA BOLSA es protagonista, NO la carne/marisco.' +
+      ' R1: Entorno negocio en primeros 3 segundos (mostrador, bascula, cajas).' +
+      ' R2: Problema antes que producto (nudo tension, deformacion peso).' +
+      ' R3: Volumen visual, no en copy.' +
+      ' REGLAS PRODUCTO: CARNE=cherry-red+marbling blanco NUNCA oscura. CAMARON=gris translucido+escarcha NUNCA rosa.' +
+      ' Bascula=20.00kg LED verde. Bolsa 50x70 llena 85% oval. Guantes azules nitrilo. Sangre solo adentro.' +
+      ' Ambiente=BRILLANTE mexicano, paredes blancas, acero inox, fluorescentes. CERO oscuro.' +
+      ' UNIFORME: mandil mezclilla oscura sobre polo gris (NO mandil blanco).' +
+      ' ESTRUCTURA VIDEO 12-14 segundos:' +
+      ' 0-3s: SOLO BOLSA close-up nudo tension, carne cherry-red visible a traves del plastico, SIN avatar.' +
+      ' 3-7s: Problema/educativo, overlay texto blanco bold, zona 35-55% vertical.' +
+      ' 7-12s: Avatar HeyGen cierre + CTA + logo ROAR.' +
+      ' HEYGEN: voz Enrique Mondragon, Spanish Mexico, ElevenLabs V3, estabilidad 60-65%, tono carnicero coloquial NO locutor.' +
+      ' AUDIO: ambiente industrial -20dB, CERO musica alegre.' +
+      ' Genera PACK COMPLETO en este orden exacto:' +
+      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
+      ' (prompt detallado para generar imagen limpia SIN TEXTO, bolsa protagonista, entorno negocio)' +
+      ' ## 2) SCRIPT HEYGEN 12-14SEG DOCUMENTAL MEXICANO' +
+      ' (guion completo con timecodes 0-3s 3-7s 7-12s, overlay texto, narracion avatar)' +
+      ' ## 3) COPY META ADS - 3 VARIANTES' +
+      ' (Ganador/Miedo perdida/Social proof, tono coloquial mexicano, max 125 caracteres cada uno)' +
+      ' ## 4) INSTRUCCIONES CAPCUT' +
+      ' (zonas seguras Stories 14/20, Reels 14/35/6, fuente blanca bold, posicion texto)' +
+      ' Max 500 palabras total.';
   try{
     const r=await claude(p);
     out.textContent=r;
