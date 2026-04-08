@@ -172,7 +172,18 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <div style="margin-bottom:8px"><label style="font-size:11px;color:#999">Angulo / Hook principal</label><input type="text" id="ang" placeholder="La bolsa que aguanta mojada, fria y cargada" style="margin-top:4px"></div>
 <button class="btn bp" onclick="genCreativo()">&#127916; Generar pack creativo</button>
 </div>
-<div class="card"><div class="ct">PACK CREATIVO - Prompt ElevenLabs + Script HeyGen + Copy</div><div class="out" id="creat-out">Configura y presiona Generar...</div></div>
+<div class="card"><div class="ct">PACK CREATIVO - Prompt ElevenLabs + Script HeyGen + Copy</div><div class="out" id="creat-out">Configura y presiona Generar...</div>
+<div id="heygen-panel" style="margin-top:12px;border-top:1px solid #333;padding-top:12px">
+  <div class="ct" style="margin-bottom:8px">🎬 ENVIAR A HEYGEN</div>
+  <button class="btn bp" onclick="generateHeyGenVideo()" id="heygen-btn" style="width:100%;margin-bottom:8px">🎬 Enviar a HeyGen y generar video</button>
+  <div id="heygen-status" style="font-size:11px;color:#888"></div>
+  <div id="heygen-result" style="margin-top:8px;display:none">
+    <div style="color:#4CAF50;font-size:12px;margin-bottom:4px">Video en proceso (~2-5 min)</div>
+    <div id="heygen-video-id" style="font-size:11px;color:#888"></div>
+    <button class="btn bs" onclick="checkHeyGenStatus()" style="margin-top:6px;font-size:11px">Verificar estado</button>
+    <div id="heygen-video-url" style="margin-top:6px"></div>
+  </div>
+</div></div>
 </div>
 
 </div>
