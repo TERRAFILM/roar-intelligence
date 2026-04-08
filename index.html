@@ -368,7 +368,9 @@ META: ${document.getElementById('meta-data').value}
 KOMMO: Leads=${document.getElementById('k-tot').value}, %Bolsa=${document.getElementById('k-bol').value}%, %Zombies=${document.getElementById('k-zom').value}%, %Reales=${document.getElementById('k-rea').value}%, %Comp=${document.getElementById('k-com').value}%, QR=${document.getElementById('k-qr').value}
 Obs: ${document.getElementById('k-extra').value}
 REGLAS: CPA bajo+bolsa>60%=ESCALAR. CPA bajo+bolsa<30%=LOOP TRAMPA APAGAR. Zombies>50%=creativo ambiguo.
-Genera: 1)DIAGNOSTICO DUAL 2)LOOPS TRAMPA 3)SCORECARD CAPAS 4)ACCIONES(pausar/escalar/redisenar) 5)ALERTA ANDROMEDA. Max 350 palabras.`;
+Genera: 1)DIAGNOSTICO DUAL 2)LOOPS TRAMPA 3)SCORECARD CAPAS 4)ACCIONES(pausar/escalar/redisenar) 5)ALERTA ANDROMEDA. Max 350 palabras.` +
+  (window._compAnalisis ? '\nCOMPETITIVA ACTIVA: ' + window._compAnalisis.substring(0,300) : '') +
+  (window._compMenciones ? '\nMENCIONES PROBLEMA WA: ' + window._compMenciones : '');
   try{
     const r=await claude(p);
     out.textContent=r;
@@ -693,6 +695,15 @@ async function genAudio(){
       if(status) status.textContent = '❌ Error: '+e.message;
     }
     if(btn){ btn.disabled = false; btn.textContent = '📋 Cargar datos reales de Kommo'; }
+    // Guardar menciones de problema para Intelligence V2
+    const p1 = document.getElementById('k-p1') ? document.getElementById('k-p1').value : '0';
+    const p2 = document.getElementById('k-p2') ? document.getElementById('k-p2').value : '0';
+    const p3 = document.getElementById('k-p3') ? document.getElementById('k-p3').value : '0';
+    const p4 = document.getElementById('k-p4') ? document.getElementById('k-p4').value : '0';
+    const p5 = document.getElementById('k-p5') ? document.getElementById('k-p5').value : '0';
+    const p6 = document.getElementById('k-p6') ? document.getElementById('k-p6').value : '0';
+    const p7 = document.getElementById('k-p7') ? document.getElementById('k-p7').value : '0';
+    window._compMenciones = 'Se rompe/truena:' + p1 + ' Doble bolsa:' + p2 + ' No soporta peso:' + p3 + ' Frio congelador:' + p4 + ' Calor revienta:' + p5 + ' Picos perforan:' + p6 + ' Solo precio:' + p7;
   }
 
 
@@ -1225,7 +1236,7 @@ async function analizarCompetencia(){
         body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:p}] })
       });
       const d = await r.json();
-      document.getElementById('comp-analisis').style.display='block'; out.textContent = d.content[0].text; out.style.display='block';
+      document.getElementById('comp-analisis').style.display='block'; out.textContent = d.content[0].text; out.style.display='block'; window._compAnalisis = d.content[0].text;
     } catch(e){
       out.textContent = 'Error: ' + e.message;
     }
