@@ -406,6 +406,9 @@ function aprobar(btn,msg){
     detalle.toLowerCase().includes('elevenlabs');
   if(esCreativo){
     setTimeout(function(){
+      // Navegar a Creativos usando tab() nativa correctamente
+      const btnCreativos = document.querySelector('.nb[onclick*="creativos"]');
+      if(btnCreativos){ tab('creativos', btnCreativos); }
       const segMap = {
         'carniceria':'Carniceria','carniceria':'Carniceria',
         'marisco':'Mariscos','camaron':'Mariscos',
