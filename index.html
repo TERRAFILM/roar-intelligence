@@ -1132,9 +1132,9 @@ async function genAudio(){
   const promptEL = promptMatch ? promptMatch[1].trim().substring(0, 600) : '';
 
   // Pre-llenar guion avatar en ElevenLabs TTS
-  const ttsArea = document.getElementById('el-tts-text') ||
-    document.querySelector('textarea[placeholder*="Guion"]') ||
-    document.querySelector('textarea[placeholder*="guion"]');
+  const ttsArea = document.querySelector('textarea[placeholder*="Guion"]') ||
+    document.querySelector('textarea[placeholder*="guion"]') ||
+    document.getElementById('el-tts-text');
   if(ttsArea && script){ ttsArea.value = script; }
 
   // Pre-llenar prompt imagen en ElevenLabs Imagen
@@ -1305,6 +1305,12 @@ async function correrAuditoriaROAR(){
         '<br><span style="color:#888;font-size:11px">Usar este nombre al subir a Meta Ads Manager</span>';
       const producirBtn = document.getElementById('producir-btn');
       if(producirBtn) producirBtn.style.display = 'block';
+    }
+    // Activar Producir tambien con APROBADO CON OBSERVACIONES
+    const auditResultText = out.textContent || '';
+    if(auditResultText.includes('APROBADO') && !auditResultText.includes('RECHAZADO')){
+      const producirBtn2 = document.getElementById('producir-btn');
+      if(producirBtn2) producirBtn2.style.display = 'block';
     }
   } catch(e) {
     out.textContent = 'Error: ' + e.message;
