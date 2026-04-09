@@ -75,6 +75,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <button class="nb" onclick="tab('acciones',this)">&#9889; Acciones</button>
 <button class="nb" onclick="tab('creativos',this)">&#127916; Creativos</button>
 <button class="nb" onclick="tab('bitacora',this)">&#128221; Bitácora</button>
+<button class="nb" onclick="tab('campana',this)">&#128640; Campaña</button>
 <button class="nb" onclick="tab('competitiva',this)">&#128269; Competencia</button>
 </nav>
 </div>
@@ -203,6 +204,23 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
     <div class="out" id="comp-analisis-out">Carga anuncios primero y presiona Analizar...</div>
     <button class="btn bp" onclick="analizarCompetencia()" style="width:100%;margin-top:8px">&#129504; Analizar patrones con Claude</button>
   </div>
+</div>
+</div>
+
+<div id="tab-campana" class="tab">
+<div class="stitle">&#128640; Panel de Campaña — Semana 7 Abril 2026</div>
+<div class="card" style="margin-bottom:12px;padding:12px;background:#111;border:1px solid #ff6b35;border-radius:8px">
+  <div style="font-size:13px;font-weight:bold;color:#ff6b35;margin-bottom:8px">ROAR_Semana7_Abril2026 — 16 creativos / 8 ad sets</div>
+  <div style="font-size:11px;color:#888">Genera cada creativo en el módulo Creativos → el SKU aprobado se registra aquí automáticamente</div>
+</div>
+
+<div id="campana-lista" style="display:flex;flex-direction:column;gap:8px"></div>
+
+<div style="margin-top:16px">
+  <button class="btn bp" onclick="subirCampanaAMeta()" id="subir-campana-btn" style="width:100%;background:#1565C0;display:none">
+    &#128640; Subir campaña completa a Meta Ads
+  </button>
+  <div id="subir-campana-status" style="font-size:11px;color:#888;margin-top:6px;text-align:center"></div>
 </div>
 </div>
 
@@ -1237,6 +1255,83 @@ async function regenerarConCorrecciones(){
   btn.textContent = '🔄 Regenerar pack con correcciones'; btn.disabled = false;
 }
 
+function registrarEnCampana(sku, segmento, capa, hook){
+  if(!window._campanaCreativos) window._campanaCreativos = [];
+  // Evitar duplicados
+  const existe = window._campanaCreativos.find(function(c){ return c.sku === sku; });
+  if(existe) return;
+  window._campanaCreativos.push({
+    sku: sku, segmento: segmento, capa: capa, hook: hook,
+    estado: 'assets_pendientes', timestamp: new Date().toISOString()
+  });
+  renderCampanaLista();
+  // Mostrar boton subir si hay 2+ creativos
+  const btn = document.getElementById('subir-campana-btn');
+  if(btn && window._campanaCreativos.length >= 2) btn.style.display = 'block';
+}
+
+function renderCampanaLista(){
+  const lista = document.getElementById('campana-lista');
+  if(!lista || !window._campanaCreativos) return;
+  lista.innerHTML = '';
+  // Agrupar por capa
+  const porCapa = {};
+  window._campanaCreativos.forEach(function(c){
+    const capa = c.sku.split('|')[0];
+    if(!porCapa[capa]) porCapa[capa] = [];
+    porCapa[capa].push(c);
+  });
+  Object.keys(porCapa).forEach(function(capa){
+    const grupo = document.createElement('div');
+    grupo.style.cssText = 'background:#111;border:1px solid #333;border-radius:6px;padding:10px;margin-bottom:6px';
+    grupo.innerHTML = '<div style="color:#ff6b35;font-size:12px;font-weight:bold;margin-bottom:6px">AD SET: ' + capa + ' (' + porCapa[capa].length + '/2 ads)</div>';
+    porCapa[capa].forEach(function(c){
+      const estadoColor = c.estado === 'assets_listos' ? '#00C853' : c.estado === 'subido' ? '#1565C0' : '#FF9800';
+      const estadoLabel = c.estado === 'assets_listos' ? '✅ Assets listos' : c.estado === 'subido' ? '🚀 Subido a Meta' : '⏳ Assets pendientes';
+      const item = document.createElement('div');
+      item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a1a1a;font-size:11px';
+      item.innerHTML = '<div><div style="color:#fff;font-family:monospace">' + c.sku + '</div>' +
+        '<div style="color:#666;margin-top:2px">' + c.hook + '</div></div>' +
+        '<div style="display:flex;gap:6px;align-items:center">' +
+        '<span style="color:' + estadoColor + ';font-size:10px">' + estadoLabel + '</span>' +
+        '<button onclick="marcarAssetListo('' + c.sku + '')" style="background:#333;color:#fff;border:none;padding:3px 8px;border-radius:4px;font-size:10px;cursor:pointer">Assets ✓</button>' +
+        '</div>';
+      grupo.appendChild(item);
+    });
+    lista.appendChild(grupo);
+  });
+  // Resumen
+  const total = window._campanaCreativos.length;
+  const listos = window._campanaCreativos.filter(function(c){ return c.estado === 'assets_listos'; }).length;
+  const resumen = document.createElement('div');
+  resumen.style.cssText = 'text-align:center;font-size:11px;color:#888;padding:8px';
+  resumen.textContent = total + '/16 creativos registrados — ' + listos + ' con assets listos';
+  lista.appendChild(resumen);
+}
+
+function marcarAssetListo(sku){
+  if(!window._campanaCreativos) return;
+  window._campanaCreativos.forEach(function(c){
+    if(c.sku === sku) c.estado = 'assets_listos';
+  });
+  renderCampanaLista();
+}
+
+async function subirCampanaAMeta(){
+  const btn = document.getElementById('subir-campana-btn');
+  const status = document.getElementById('subir-campana-status');
+  const listos = (window._campanaCreativos || []).filter(function(c){ return c.estado === 'assets_listos'; });
+  if(listos.length === 0){
+    status.textContent = '⚠️ Marca assets como listos antes de subir';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '⏳ Preparando campaña...';
+  status.textContent = listos.length + ' creativos listos para subir — funcion de subida Meta API proxima sesion';
+  btn.disabled = false;
+  btn.textContent = '&#128640; Subir campaña completa a Meta Ads';
+}
+
 function actualizarContextoPanel(){
   const panel = document.getElementById('contexto-activo');
   if(!panel) return;
@@ -1387,6 +1482,11 @@ async function correrAuditoriaROAR(){
     if(auditResultText.includes('APROBADO') && !auditResultText.includes('RECHAZADO')){
       const producirBtn2 = document.getElementById('producir-btn');
       if(producirBtn2) producirBtn2.style.display = 'block';
+      // Registrar automaticamente en panel Campana
+      const segVal2 = document.getElementById('creat-seg') ? document.getElementById('creat-seg').value : '';
+      const capaVal2 = document.getElementById('creat-capa') ? document.getElementById('creat-capa').value : '';
+      const hookVal2 = document.getElementById('ang') ? document.getElementById('ang').value : '';
+      if(typeof registrarEnCampana === 'function') registrarEnCampana(skuMatch[1], segVal2, capaVal2, hookVal2);
     }
   } catch(e) {
     out.textContent = 'Error: ' + e.message;
