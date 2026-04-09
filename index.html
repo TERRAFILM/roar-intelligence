@@ -712,7 +712,7 @@ async function genAudio(){
     
     // Extraer script del pack generado
     const packText = document.getElementById('creat-out').innerText;
-    const scriptMatch = packText.match(/SCRIPT HEYGEN[^\n]*\n([\s\S]*?)(?=##|COPY|$)/i);
+    const scriptMatch = packText.match(/SCRIPT HEYGEN[\s\S]*?(?=##|$)/i);
     const script = scriptMatch ? scriptMatch[1].trim().substring(0, 1500) : packText.substring(0, 1500);
     
     if(!script || script === 'Configura y presiona Generar...'){
@@ -1078,15 +1078,10 @@ async function genAudio(){
   const sku = skuDiv ? skuDiv.textContent : '';
 
   // Extraer script HeyGen del pack
-  const scriptMatch = packText.match(/SCRIPT HEYGEN[^
-]*
-([\s\S]*?)(?=##|COPY|$)/i);
-  const script = scriptMatch ? scriptMatch[1].trim().substring(0, 800) : '';
+  const scriptMatch = packText.match(/SCRIPT HEYGEN[\s\S]*?(?=## 3|COPY|$)/i);
+  const script = scriptMatch ? scriptMatch[0].trim().substring(0, 800) : '';
 
-  // Extraer prompt ElevenLabs del pack
-  const promptMatch = packText.match(/PROMPT IMAGEN[^
-]*
-([\s\S]*?)(?=##|SCRIPT|$)/i);
+  const promptMatch = packText.match(/PROMPT IMAGEN[\s\S]*?(?=## 2|SCRIPT|$)/i);
   const promptEL = promptMatch ? promptMatch[1].trim().substring(0, 600) : '';
 
   // Pre-llenar guion avatar en ElevenLabs TTS
