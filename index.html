@@ -407,8 +407,11 @@ function aprobar(btn,msg){
   if(esCreativo){
     setTimeout(function(){
       document.querySelectorAll('.tab').forEach(function(t){ t.style.display='none'; });
+      const tabC = document.getElementById('tab-creativos');
+      if(tabC) tabC.style.display='block';
+      document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
       const btnC = document.querySelector('[onclick*="creativos"]');
-      if(btnC) tab('creativos', btnC);
+      if(btnC) btnC.classList.add('active');
       const segMap = {
         'carniceria':'Carniceria','carniceria':'Carniceria',
         'marisco':'Mariscos','camaron':'Mariscos',
