@@ -1125,14 +1125,22 @@ async function genAudio(){
   const sku = skuDiv ? skuDiv.textContent : '';
 
   // Extraer script HeyGen del pack
-  // Extraer solo el texto del script (lineas 0-3s, 3-7s, 7-12s)
-  const scriptLines = [];
-  packText.split('\n').forEach(function(line){
-    if(line.includes('AUDIO:') || line.includes('[0-') || line.includes('[3-') || line.includes('[7-')){
-      scriptLines.push(line.replace(/\*|\[.*?\]/g,'').replace('AUDIO:','').trim());
-    }
-  });
-  const script = scriptLines.join(' ').substring(0, 600) || packText.substring(0, 400);
+  // Extraer SOLO el script del avatar — buscar seccion SCRIPT HEYGEN
+  let script = '';
+  const scriptStart = packText.indexOf('SCRIPT HEYGEN');
+  const scriptEnd = packText.indexOf('## 3)') > 0 ? packText.indexOf('## 3)') : packText.indexOf('COPY META');
+  if(scriptStart > 0 && scriptEnd > scriptStart){
+    const scriptBlock = packText.substring(scriptStart, scriptEnd);
+    // Extraer solo las lineas de AUDIO
+    const audioLines = [];
+    scriptBlock.split('\n').forEach(function(line){
+      if(line.includes('AUDIO') || line.includes('"')){
+        audioLines.push(line.replace(/\*\*/g,'').replace(/AUDIO:/g,'').replace(/\[.*?\]/g,'').replace(/\*/g,'').trim());
+      }
+    });
+    script = audioLines.filter(function(l){ return l.length > 5; }).join(' ').substring(0, 500);
+  }
+  if(!script) script = packText.substring(0, 300);
 
   // Extraer prompt imagen
   const promptIdx = packText.indexOf('PROMPT IMAGEN');
