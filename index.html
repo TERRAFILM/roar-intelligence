@@ -1125,22 +1125,26 @@ async function genAudio(){
   const sku = skuDiv ? skuDiv.textContent : '';
 
   // Extraer script HeyGen del pack
-  const scriptMatch = packText.match(/SCRIPT HEYGEN[\s\S]*?(?=## 3|COPY|$)/i);
-  const script = scriptMatch ? scriptMatch[0].trim().substring(0, 800) : '';
+  // Extraer solo el texto del script (lineas 0-3s, 3-7s, 7-12s)
+  const scriptLines = [];
+  packText.split('\n').forEach(function(line){
+    if(line.includes('AUDIO:') || line.includes('[0-') || line.includes('[3-') || line.includes('[7-')){
+      scriptLines.push(line.replace(/\*|\[.*?\]/g,'').replace('AUDIO:','').trim());
+    }
+  });
+  const script = scriptLines.join(' ').substring(0, 600) || packText.substring(0, 400);
 
-  const promptMatch = packText.match(/PROMPT IMAGEN[\s\S]*?(?=## 2|SCRIPT|$)/i);
-  const promptEL = promptMatch ? promptMatch[1].trim().substring(0, 600) : '';
+  // Extraer prompt imagen
+  const promptIdx = packText.indexOf('PROMPT IMAGEN');
+  const scriptIdx = packText.indexOf('SCRIPT HEYGEN');
+  const promptEL = promptIdx > 0 ? packText.substring(promptIdx + 20, scriptIdx > 0 ? scriptIdx : promptIdx + 700).trim() : '';
 
   // Pre-llenar guion avatar en ElevenLabs TTS
-  const ttsArea = document.querySelector('textarea[placeholder*="Guion"]') ||
-    document.querySelector('textarea[placeholder*="guion"]') ||
-    document.getElementById('el-tts-text');
+  const ttsArea = document.getElementById('audio-script');
   if(ttsArea && script){ ttsArea.value = script; }
 
   // Pre-llenar prompt imagen en ElevenLabs Imagen
-  const imgArea = document.getElementById('el-img-prompt') ||
-    document.querySelector('textarea[placeholder*="prompt"]') ||
-    document.querySelector('textarea[placeholder*="Prompt"]');
+  const imgArea = document.getElementById('el-img-prompt');
   if(imgArea && promptEL){ imgArea.value = promptEL; }
 
   // Scroll al panel HeyGen
