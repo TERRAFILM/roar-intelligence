@@ -1303,10 +1303,52 @@ async function correrAuditoriaROAR(){
       skuDiv.innerHTML = '<span style="color:#ff6b35;font-weight:bold">SKU GENERADO:</span> ' +
         '<span style="color:#fff;font-family:monospace;font-size:14px">' + skuMatch[1] + '</span>' +
         '<br><span style="color:#888;font-size:11px">Usar este nombre al subir a Meta Ads Manager</span>';
+      // CALIBRADOR DE FALLOS POR JERARQUIA
+      // CRITICOS: Andromeda + Estructura — bloquean produccion sin importar nada
+      // MAYORES: CTA + Problema — requieren regenerar
+      // MENORES: Vocabulario (copy escrito) + Entorno + Segmento — Camilo decide
+      const fallaAndromeda = /1\).*FALLO|ANDROMEDA.*FALLO/i.test(resultado);
+      const fallaEstructura = /6\).*FALLO|ESTRUCTURA.*FALLO/i.test(resultado);
+      const fallaCTA = /7\).*FALLO|CTA.*FALLO/i.test(resultado);
+      const fallaProblema = /3\).*FALLO|PROBLEMA.*FALLO/i.test(resultado);
+      const fallaVocab = /4\).*FALLO|VOCABULARIO.*FALLO/i.test(resultado);
+      const fallaEntorno = /2\).*FALLO|ENTORNO.*FALLO/i.test(resultado);
+      const fallaSegmento = /5\).*FALLO|SEGMENTO.*FALLO/i.test(resultado);
+
+      const esCritico = fallaAndromeda || fallaEstructura;
+      const esMayor = fallaCTA || fallaProblema;
+      const esMenor = (fallaVocab || fallaEntorno || fallaSegmento) && !esCritico && !esMayor;
+
       const producirBtn = document.getElementById('producir-btn');
-      if(producirBtn) producirBtn.style.display = 'block';
+      if(producirBtn){
+        if(esCritico){
+          // CRITICO: Andromeda o Estructura fallaron — no se puede producir
+          producirBtn.style.display = 'none';
+          const alerta = document.createElement('div');
+          alerta.style.cssText = 'background:#b71c1c;color:#fff;padding:10px;border-radius:6px;font-size:12px;margin-top:8px;font-weight:bold';
+          alerta.textContent = '🚫 BLOQUEADO — ' + (fallaAndromeda ? 'Andromeda fallo: bolsa no es protagonista 0-3s' : 'Estructura de video incorrecta') + ' — Regenerar obligatorio';
+          skuDiv.parentNode.insertBefore(alerta, producirBtn);
+        } else if(esMayor){
+          // MAYOR: CTA o Problema fallaron — regenerar recomendado
+          producirBtn.style.display = 'none';
+          const alerta = document.createElement('div');
+          alerta.style.cssText = 'background:#e65100;color:#fff;padding:10px;border-radius:6px;font-size:12px;margin-top:8px;font-weight:bold';
+          alerta.textContent = '⛔ REGENERAR — ' + (fallaCTA ? 'CTA WhatsApp ausente' : 'Problema aparece despues de la solucion') + ' — Corregir antes de producir';
+          skuDiv.parentNode.insertBefore(alerta, producirBtn);
+        } else if(esMenor){
+          // MENOR: Observacion — Camilo decide
+          producirBtn.style.display = 'block';
+          producirBtn.style.background = '#FF9800';
+          producirBtn.textContent = '⚠️ Producir con observacion menor — ' + (fallaVocab ? 'Cal.170 en copy escrito (ok en audio)' : fallaEntorno ? 'Entorno poco visible' : 'Giro no mencionado') + ' — Camilo decide';
+        } else {
+          // 0 fallos = APROBADO TOTAL
+          producirBtn.style.display = 'block';
+          producirBtn.style.background = '#00C853';
+          producirBtn.textContent = '🚀 Producir — APROBADO TOTAL — listo para ElevenLabs + HeyGen';
+        }
+      }
     }
-    // Activar Producir tambien con APROBADO CON OBSERVACIONES
+    // fin calibradorERVACIONES
     const auditResultText = out.textContent || '';
     if(auditResultText.includes('APROBADO') && !auditResultText.includes('RECHAZADO')){
       const producirBtn2 = document.getElementById('producir-btn');
