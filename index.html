@@ -1141,7 +1141,16 @@ async function genAudio(){
 
   // Pre-llenar guion avatar en ElevenLabs TTS
   const ttsArea = document.getElementById('audio-script');
-  if(ttsArea && script){ ttsArea.value = script; }
+  if(ttsArea && script){ 
+    ttsArea.value = script;
+  } else {
+    // Debug: mostrar que se extrajo
+    const debugBanner = document.createElement('div');
+    debugBanner.style.cssText='position:fixed;top:120px;right:20px;background:#333;color:#fff;padding:10px;border-radius:6px;font-size:11px;z-index:9999;max-width:300px;word-break:break-all';
+    debugBanner.textContent = 'Script extraido: ' + (script ? script.substring(0,100) : 'VACIO') + ' | TTS area: ' + (ttsArea ? 'OK' : 'NO ENCONTRADO');
+    document.body.appendChild(debugBanner);
+    setTimeout(function(){ debugBanner.remove(); }, 8000);
+  }
 
   // Pre-llenar prompt imagen en ElevenLabs Imagen
   const imgArea = document.getElementById('el-img-prompt');
