@@ -226,7 +226,43 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <div><label>Segmento</label><select id="seg"><option value="carniceria">Carniceria</option><option value="mariscos">Mariscos/Pescaderia</option><option value="lavanderia">Lavanderia</option><option value="granel">Tienda a Granel</option><option value="industrial">Industrial</option></select></div>
 <div><label>Capa</label><select id="capa"><option value="AI">AI - Avatar + Script</option><option value="IM">IM - Intencion Media</option><option value="COMP">COMP - Comparador</option></select></div>
 </div>
-<div style="margin-bottom:8px"><label style="font-size:11px;color:#999">Angulo / Hook principal</label><input type="text" id="ang" placeholder="La bolsa que aguanta mojada, fria y cargada" style="margin-top:4px"></div>
+<div style="margin-bottom:8px">
+<label style="font-size:11px;color:#999">Angulo / Hook principal</label>
+<select id="hook-preset" onchange="if(this.value){document.getElementById('ang').value=this.value;}" style="width:100%;background:#111;color:#aaa;border:1px solid #333;padding:8px;border-radius:6px;font-size:11px;margin-top:4px;margin-bottom:4px">
+<option value="">-- Hook predefinido (winners arriba) --</option>
+<optgroup label="WINNERS VALIDADOS">
+<option value="ya no pongo doble bolsa desde que use ROAR — la que no te deja tirado">🏆 Ya no pongo doble bolsa CTR 6.47%</option>
+<option value="bolsa que aguanta 20 kilos sin truenarse — imagen volumen carniceria">🏆 Imagen volumen carniceria CTR 7.63%</option>
+<option value="los picos del camaron ya no me rompen la bolsa — ROAR aguanta todo">🏆 Reto camaron CTR 4.84%</option>
+</optgroup>
+<optgroup label="CARNICERIA — problemas reales">
+<option value="se truena al sacar del congelador — pierdo producto y tiempo">❄️ Se truena con el frio del congelador</option>
+<option value="se desfonda con el sello cuando le pongo mas de 15 kilos de carne">⚖️ Se desfonda del sello con peso</option>
+<option value="material reciclado se rompe solo al jalarla — doble costo">♻️ Material reciclado se rompe solo</option>
+<option value="la anudan la levantan y revienta el cuerpo — cliente enojado">💥 Revienta al levantarla con el nudo</option>
+<option value="cuanto pierdes al dia cuando se desfonda la bolsa con carne">💰 Cuanto pierdes cuando se desfonda</option>
+<option value="vs doble bolsa cual sale mas caro — matematicas de carnicero">🔢 Comparativo vs doble bolsa</option>
+</optgroup>
+<optgroup label="MARISCOS — problemas especificos">
+<option value="los picos del camaron y las espinas perforan la bolsa — merma directa">🦐 Picos de camaron perforan la bolsa</option>
+<option value="carga camaron frio mojado y pesado sin romperse — para marisqueria">🧊 Aguanta frio mojado y pesado</option>
+<option value="bolsa que no se rompe con hielo y mariscos — cero derrames">🧊 Cero derrames con hielo y mariscos</option>
+</optgroup>
+<optgroup label="POLLERIA / GRANEL">
+<option value="carga pollo frio mojado pesado sin truenarse — para polleria profesional">🍗 Pollo frio mojado polleria</option>
+<option value="frijoles caldos comida caliente — la bolsa que no revienta con calor">🫘 Comida caliente no la revienta</option>
+</optgroup>
+<optgroup label="INDUSTRIAL / VOLUMEN">
+<option value="volumen mayoreo entrega a toda la republica — sin quedarte sin stock">📦 Mayoreo entrega toda la republica</option>
+<option value="la bolsa que usa el carnicero profesional — no la de la tiendita">⭐ La que usa el profesional no la de tiendita</option>
+</optgroup>
+<optgroup label="MARCA — brand promise">
+<option value="la que no te deja tirado — bolsa ROAR para negocio que si funciona">⚡ La que no te deja tirado</option>
+<option value="especialistas en bolsas para carniceria y marisqueria en Guadalajara">🎯 Especialistas en tu giro GDL</option>
+</optgroup>
+</select>
+<input type="text" id="ang" placeholder="La bolsa que aguanta mojada, fria y cargada" style="margin-top:4px">
+</div>
 <div id="contexto-activo" style="margin-bottom:12px;padding:10px;background:#1a1a1a;border:1px solid #333;border-radius:6px;font-size:11px;display:none">
   <div style="color:#ff6b35;font-weight:bold;margin-bottom:6px">⚡ INPUTS ACTIVOS ESTA SEMANA</div>
   <div id="ctx-acciones" style="color:#888;margin-bottom:3px">⬜ Acciones: sin cargar</div>
