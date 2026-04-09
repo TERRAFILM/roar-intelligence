@@ -71,12 +71,12 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <nav>
 <button class="nb active" onclick="tab('dashboard',this)">&#128202; Dashboard</button>
 <button class="nb" onclick="tab('intel',this)">&#129504; Intelligence</button>
-<button class="nb" onclick="tab('andromeda',this)">&#127919; Andromeda</button>
 <button class="nb" onclick="tab('acciones',this)">&#9889; Acciones</button>
 <button class="nb" onclick="tab('creativos',this)">&#127916; Creativos</button>
 <button class="nb" onclick="tab('bitacora',this)">&#128221; Bitácora</button>
 <button class="nb" onclick="tab('campana',this)">&#128640; Campaña</button>
 <button class="nb" onclick="tab('competitiva',this)">&#128269; Competencia</button>
+<button class="nb" onclick="tab('creditos',this);cargarCreditos()">&#128176; Creditos</button>
 </nav>
 </div>
 <div class="content">
@@ -131,6 +131,45 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <div class="card" style="margin-top:16px"><div class="ct">ANALISIS INTELLIGENCE</div><div class="out" id="intel-out">Ingresa datos y presiona Correr Intelligence V2...</div>
 <button class="btn bs" id="save-bitacora-btn" onclick="guardarEnBitacora()" style="margin-top:8px;width:100%">📓 Guardar análisis en Bitácora</button>
 <div id="save-bitacora-status" style="font-size:11px;color:#888;margin-top:4px"></div></div>
+</div>
+
+<div id="tab-creditos" class="tab">
+<div class="stitle">&#128176; Monitor de Creditos y APIs</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+
+  <div class="card" style="padding:16px;background:#111;border:1px solid #333;border-radius:8px">
+    <div style="font-size:12px;color:#ff6b35;font-weight:bold;margin-bottom:8px">&#127928; ElevenLabs</div>
+    <div id="el-creditos" style="font-size:13px;color:#888">Cargando...</div>
+    <div style="margin-top:8px;font-size:11px;color:#666">Caracteres TTS + Imagenes</div>
+    <a href="https://elevenlabs.io/subscription" target="_blank" style="display:block;margin-top:8px;color:#ff6b35;font-size:11px">&#128279; Ver plan / Recargar</a>
+  </div>
+
+  <div class="card" style="padding:16px;background:#111;border:1px solid #333;border-radius:8px">
+    <div style="font-size:12px;color:#ff6b35;font-weight:bold;margin-bottom:8px">&#127916; HeyGen</div>
+    <div id="hg-creditos" style="font-size:13px;color:#888">Cargando...</div>
+    <div style="margin-top:8px;font-size:11px;color:#666">Creditos de video restantes</div>
+    <a href="https://app.heygen.com/settings/billing" target="_blank" style="display:block;margin-top:8px;color:#ff6b35;font-size:11px">&#128279; Ver plan / Recargar</a>
+  </div>
+
+  <div class="card" style="padding:16px;background:#111;border:1px solid #333;border-radius:8px">
+    <div style="font-size:12px;color:#ff6b35;font-weight:bold;margin-bottom:8px">&#129504; Claude / Anthropic</div>
+    <div style="font-size:13px;color:#888">No disponible via API</div>
+    <div style="margin-top:8px;font-size:11px;color:#666">Ver creditos en consola Anthropic</div>
+    <a href="https://console.anthropic.com/settings/billing" target="_blank" style="display:block;margin-top:8px;color:#ff6b35;font-size:11px">&#128279; Ver plan / Recargar</a>
+  </div>
+
+  <div class="card" style="padding:16px;background:#111;border:1px solid #333;border-radius:8px">
+    <div style="font-size:12px;color:#ff6b35;font-weight:bold;margin-bottom:8px">&#128273; Meta Ads</div>
+    <div id="meta-creditos" style="font-size:13px;color:#888">Cargando...</div>
+    <div style="margin-top:8px;font-size:11px;color:#666">Saldo cuenta publicitaria</div>
+    <a href="https://business.facebook.com/billing" target="_blank" style="display:block;margin-top:8px;color:#ff6b35;font-size:11px">&#128279; Ver saldo / Recargar</a>
+  </div>
+
+</div>
+
+<button class="btn bp" onclick="cargarCreditos()" style="width:100%">&#128260; Actualizar todos los creditos</button>
+<div id="creditos-status" style="font-size:11px;color:#888;text-align:center;margin-top:8px"></div>
 </div>
 
 <div id="tab-andromeda" class="tab">
@@ -1330,6 +1369,82 @@ async function subirCampanaAMeta(){
   status.textContent = listos.length + ' creativos listos para subir — funcion de subida Meta API proxima sesion';
   btn.disabled = false;
   btn.textContent = '&#128640; Subir campaña completa a Meta Ads';
+}
+
+async function cargarCreditos(){
+  const status = document.getElementById('creditos-status');
+  if(status) status.textContent = 'Actualizando...';
+
+  // ElevenLabs — caracteres restantes
+  try {
+    const elRes = await fetch('/api/elevenlabs', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action:'get_credits'})
+    });
+    const elData = await elRes.json();
+    const elDiv = document.getElementById('el-creditos');
+    if(elDiv){
+      if(elData.character_count !== undefined){
+        const usados = elData.character_count;
+        const limite = elData.character_limit;
+        const restantes = limite - usados;
+        const pct = Math.round((usados/limite)*100);
+        const color = pct > 80 ? '#f44336' : pct > 60 ? '#FF9800' : '#00C853';
+        elDiv.innerHTML = '<span style="color:' + color + ';font-size:16px;font-weight:bold">' + restantes.toLocaleString() + '</span> chars restantes<br>' +
+          '<span style="font-size:10px;color:#666">' + usados.toLocaleString() + ' / ' + limite.toLocaleString() + ' usados (' + pct + '%)</span>';
+      } else {
+        elDiv.textContent = 'Error: ' + JSON.stringify(elData).substring(0,50);
+      }
+    }
+  } catch(e) {
+    const elDiv = document.getElementById('el-creditos');
+    if(elDiv) elDiv.textContent = 'Error: ' + e.message;
+  }
+
+  // HeyGen — creditos restantes
+  try {
+    const hgRes = await fetch('/api/heygen', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action:'get_credits'})
+    });
+    const hgData = await hgRes.json();
+    const hgDiv = document.getElementById('hg-creditos');
+    if(hgDiv){
+      if(hgData.data && hgData.data.remaining_quota !== undefined){
+        const restantes = hgData.data.remaining_quota;
+        const color = restantes < 5 ? '#f44336' : restantes < 15 ? '#FF9800' : '#00C853';
+        hgDiv.innerHTML = '<span style="color:' + color + ';font-size:16px;font-weight:bold">' + restantes + '</span> creditos de video<br>' +
+          '<span style="font-size:10px;color:#666">~' + restantes + ' videos disponibles</span>';
+      } else {
+        hgDiv.textContent = JSON.stringify(hgData).substring(0,80);
+      }
+    }
+  } catch(e) {
+    const hgDiv = document.getElementById('hg-creditos');
+    if(hgDiv) hgDiv.textContent = 'Error: ' + e.message;
+  }
+
+  // Meta — saldo cuenta
+  try {
+    const metaToken = 'from_env';
+    const metaRes = await fetch('/api/meta-billing');
+    const metaData = await metaRes.json();
+    const metaDiv = document.getElementById('meta-creditos');
+    if(metaDiv){
+      if(metaData.amount_due !== undefined){
+        metaDiv.innerHTML = 'Saldo: <span style="color:#00C853;font-weight:bold">$' + metaData.amount_due + ' MXN</span>';
+      } else {
+        metaDiv.textContent = 'Ver en Meta Business Manager';
+      }
+    }
+  } catch(e) {
+    const metaDiv = document.getElementById('meta-creditos');
+    if(metaDiv) metaDiv.textContent = 'Ver en Meta Business Manager';
+  }
+
+  if(status) status.textContent = 'Actualizado — ' + new Date().toLocaleTimeString();
 }
 
 function actualizarContextoPanel(){

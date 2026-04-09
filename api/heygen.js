@@ -1,6 +1,22 @@
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const key = process.env.HEYGEN_API_KEY;
+
+  // GET CREDITS
+  if (req.method === 'POST' && req.body && req.body.action === 'get_credits') {
+    const r = await fetch('https://api.heygen.com/v2/user/remaining_quota', {
+      headers: { 'X-Api-Key': key }
+    });
+    const d = await r.json();
+    return res.status(200).json(d);
+  }
+
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const apiKey = process.env.HEYGEN_API_KEY;
