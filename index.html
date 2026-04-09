@@ -227,6 +227,12 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <div><label>Capa</label><select id="capa"><option value="AI">AI - Avatar + Script</option><option value="IM">IM - Intencion Media</option><option value="COMP">COMP - Comparador</option></select></div>
 </div>
 <div style="margin-bottom:8px"><label style="font-size:11px;color:#999">Angulo / Hook principal</label><input type="text" id="ang" placeholder="La bolsa que aguanta mojada, fria y cargada" style="margin-top:4px"></div>
+<div id="contexto-activo" style="margin-bottom:12px;padding:10px;background:#1a1a1a;border:1px solid #333;border-radius:6px;font-size:11px;display:none">
+  <div style="color:#ff6b35;font-weight:bold;margin-bottom:6px">⚡ INPUTS ACTIVOS ESTA SEMANA</div>
+  <div id="ctx-acciones" style="color:#888;margin-bottom:3px">⬜ Acciones: sin cargar</div>
+  <div id="ctx-competitiva" style="color:#888;margin-bottom:3px">⬜ Competitiva: sin cargar</div>
+  <div id="ctx-menciones" style="color:#888">⬜ Menciones WA: sin cargar</div>
+</div>
 <button class="btn bp" onclick="genCreativo()">&#127916; Generar pack creativo</button>
 </div>
 <div class="card"><div class="ct">PACK CREATIVO - Prompt ElevenLabs + Script HeyGen + Copy</div><div class="out" id="creat-out">Configura y presiona Generar...</div>
@@ -402,6 +408,7 @@ function aprobar(btn,msg){
   // Guardar accion aprobada como input para Creativos
   if(!window._accionesAprobadas) window._accionesAprobadas = [];
   window._accionesAprobadas.push({ titulo: titulo, detalle: detalle, timestamp: new Date().toISOString() });
+  actualizarContextoPanel();
   const esCreativo = titulo.toLowerCase().includes('creativo') ||
     titulo.toLowerCase().includes('pack') ||
     titulo.toLowerCase().includes('generar') ||
@@ -700,6 +707,7 @@ async function genAudio(){
     const p5 = document.getElementById('k-p5') ? document.getElementById('k-p5').value : '0';
     const p6 = document.getElementById('k-p6') ? document.getElementById('k-p6').value : '0';
     const p7 = document.getElementById('k-p7') ? document.getElementById('k-p7').value : '0';
+    actualizarContextoPanel();
     window._compMenciones = 'Se rompe/truena:' + p1 + ' Doble bolsa:' + p2 + ' No soporta peso:' + p3 + ' Frio congelador:' + p4 + ' Calor revienta:' + p5 + ' Picos perforan:' + p6 + ' Solo precio:' + p7;
   }
 
@@ -1157,6 +1165,29 @@ async function regenerarConCorrecciones(){
   btn.textContent = '🔄 Regenerar pack con correcciones'; btn.disabled = false;
 }
 
+function actualizarContextoPanel(){
+  const panel = document.getElementById('contexto-activo');
+  if(!panel) return;
+  panel.style.display = 'block';
+
+  const ctxAcc = document.getElementById('ctx-acciones');
+  const ctxComp = document.getElementById('ctx-competitiva');
+  const ctxMenc = document.getElementById('ctx-menciones');
+
+  if(window._accionesAprobadas && window._accionesAprobadas.length > 0){
+    ctxAcc.style.color = '#00C853';
+    ctxAcc.textContent = '✅ Acciones: ' + window._accionesAprobadas.length + ' aprobadas — ' + window._accionesAprobadas.map(function(a){ return a.titulo; }).join(' | ');
+  }
+  if(window._compAnalisis){
+    ctxComp.style.color = '#00C853';
+    ctxComp.textContent = '✅ Competitiva: analisis cargado — ' + window._compAnalisis.substring(0,80) + '...';
+  }
+  if(window._compMenciones){
+    ctxMenc.style.color = '#00C853';
+    ctxMenc.textContent = '✅ Menciones WA: ' + window._compMenciones;
+  }
+}
+
 async function correrAuditoriaROAR(){
   const packContent = document.getElementById('creat-out') ? document.getElementById('creat-out').textContent : '';
   if(!packContent || packContent === 'Configura y presiona Generar...'){
@@ -1274,6 +1305,7 @@ async function analizarCompetencia(){
       });
       const d = await r.json();
       document.getElementById('comp-analisis').style.display='block'; out.textContent = d.content[0].text; out.style.display='block'; window._compAnalisis = d.content[0].text;
+    actualizarContextoPanel();
     } catch(e){
       out.textContent = 'Error: ' + e.message;
     }
