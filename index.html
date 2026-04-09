@@ -370,6 +370,7 @@ KOMMO: Leads=${document.getElementById('k-tot').value}, %Bolsa=${document.getEle
 Obs: ${document.getElementById('k-extra').value}
 REGLAS: CPA bajo+bolsa>60%=ESCALAR. CPA bajo+bolsa<30%=LOOP TRAMPA APAGAR. Zombies>50%=creativo ambiguo.
 Genera: 1)DIAGNOSTICO DUAL 2)LOOPS TRAMPA 3)SCORECARD CAPAS 4)ACCIONES(pausar/escalar/redisenar) 5)ALERTA ANDROMEDA. Max 350 palabras.` +
+  (window._accionesAprobadas && window._accionesAprobadas.length > 0 ? '\nACCIONES APROBADAS ESTA SEMANA: ' + window._accionesAprobadas.map(function(a){ return a.titulo + ': ' + a.detalle; }).join(' | ') : '') +
   (window._compAnalisis ? '\nCOMPETITIVA ACTIVA: ' + window._compAnalisis.substring(0,300) : '') +
   (window._compMenciones ? '\nMENCIONES PROBLEMA WA: ' + window._compMenciones : '');
   try{
@@ -398,6 +399,9 @@ function aprobar(btn,msg){
   const titulo = c.querySelector('.at').textContent;
   const detalle = c.querySelector('.ad') ? c.querySelector('.ad').textContent : '';
   hist(titulo,'APROBADA');
+  // Guardar accion aprobada como input para Creativos
+  if(!window._accionesAprobadas) window._accionesAprobadas = [];
+  window._accionesAprobadas.push({ titulo: titulo, detalle: detalle, timestamp: new Date().toISOString() });
   const esCreativo = titulo.toLowerCase().includes('creativo') ||
     titulo.toLowerCase().includes('pack') ||
     titulo.toLowerCase().includes('generar') ||
