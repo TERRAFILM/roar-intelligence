@@ -1125,20 +1125,33 @@ async function genAudio(){
   const sku = skuDiv ? skuDiv.textContent : '';
 
   // Extraer script HeyGen del pack
-  // Extraer SOLO el script del avatar — buscar seccion SCRIPT HEYGEN
+  // Extraer SOLO las lineas de voz — eliminar instrucciones de overlay/camara
   let script = '';
   const scriptStart = packText.indexOf('SCRIPT HEYGEN');
   const scriptEnd = packText.indexOf('## 3)') > 0 ? packText.indexOf('## 3)') : packText.indexOf('COPY META');
   if(scriptStart > 0 && scriptEnd > scriptStart){
     const scriptBlock = packText.substring(scriptStart, scriptEnd);
-    // Extraer solo las lineas de AUDIO
     const audioLines = [];
     scriptBlock.split('\n').forEach(function(line){
-      if(line.includes('AUDIO') || line.includes('"')){
-        audioLines.push(line.replace(/\*\*/g,'').replace(/AUDIO:/g,'').replace(/\[.*?\]/g,'').replace(/\*/g,'').trim());
+      const l = line.trim();
+      // Solo tomar lineas que empiezan con comilla o tienen AUDIO:
+      if(l.startsWith('"') || l.includes('*AUDIO*') || l.includes('AUDIO:')){
+        // Limpiar — quitar overlay, instrucciones de camara, asteriscos
+        let clean = l
+          .replace(/AUDIO:/gi,'')
+          .replace(/\*AUDIO\*/gi,'')
+          .replace(/Overlay.*?:/gi,'')
+          .replace(/overlay.*$/gi,'')
+          .replace(/CTA:.*$/gi,'')
+          .replace(/\*\*/g,'')
+          .replace(/\*/g,'')
+          .trim();
+        // Quitar comillas externas
+        if(clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1,-1);
+        if(clean.length > 8) audioLines.push(clean);
       }
     });
-    script = audioLines.filter(function(l){ return l.length > 5; }).join(' ').substring(0, 500);
+    script = audioLines.join(' ').substring(0, 500);
   }
   if(!script) script = packText.substring(0, 300);
 
