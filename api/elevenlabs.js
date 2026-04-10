@@ -101,7 +101,7 @@ module.exports = async function handler(req, res) {
 
     // 6. Generar imagen (ElevenLabs Image Generation)
     if (action === 'generate_image') {
-      const r = await fetch('https://api.elevenlabs.io/v1/text-to-image', {
+      const r = await fetch('https://api.elevenlabs.io/v1/images/generate', {
         method: 'POST',
         headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
