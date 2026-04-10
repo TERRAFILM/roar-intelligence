@@ -458,7 +458,7 @@ function tab(id,btn){
 }
 async function claude(prompt){
   const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-  const d=await r.json();return d.content[0].text;
+  const d=await r.json();return (d.content && d.content[0] ? d.content[0].text : (d.error ? d.error.message : JSON.stringify(d).substring(0,150)));
 }
 async function runIntel(){
   const out=document.getElementById('intel-out');
@@ -1515,7 +1515,7 @@ async function correrAuditoriaROAR(){
     const d = await r.json();
     // Debug respuesta completa
     console.log('Auditoria API response:', JSON.stringify(d).substring(0,300));
-    const resultado = (d.content && d.content[0] && d.content[0].text) ? d.content[0].text : (d.error ? 'Error API: ' + (d.error.message || JSON.stringify(d.error)) : 'Respuesta inesperada: ' + JSON.stringify(d).substring(0,200));
+    const resultado = (d.content && d.content[0] && (d.content && d.content[0] ? d.content[0].text : (d.error ? d.error.message : JSON.stringify(d).substring(0,150)))) ? (d.content && d.content[0] ? d.content[0].text : (d.error ? d.error.message : JSON.stringify(d).substring(0,150))) : (d.error ? 'Error API: ' + (d.error.message || JSON.stringify(d.error)) : 'Respuesta inesperada: ' + JSON.stringify(d).substring(0,200));
     out.textContent = resultado;
     // Mostrar boton regenerar si hay fallos
     const regenBtn = document.getElementById('regenerar-btn');
@@ -1641,7 +1641,7 @@ async function analizarCompetencia(){
         body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:p}] })
       });
       const d = await r.json();
-      document.getElementById('comp-analisis').style.display='block'; out.textContent = d.content[0].text; out.style.display='block'; window._compAnalisis = d.content[0].text;
+      document.getElementById('comp-analisis').style.display='block'; out.textContent = (d.content && d.content[0] ? d.content[0].text : (d.error ? d.error.message : JSON.stringify(d).substring(0,150))); out.style.display='block'; window._compAnalisis = (d.content && d.content[0] ? d.content[0].text : (d.error ? d.error.message : JSON.stringify(d).substring(0,150)));
     actualizarContextoPanel();
     } catch(e){
       out.textContent = 'Error: ' + e.message;
