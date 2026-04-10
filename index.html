@@ -1541,7 +1541,7 @@ async function correrAuditoriaROAR(){
       }
     });
 
-    const skuMatch = resultado.match(/SKU:\s*([A-Z|a-z0-9|]+)/);
+    const skuMatch = resultado.match(/SKU[:\s*]+([A-Za-z0-9|_-]+)/);
     if(skuMatch) {
       skuDiv.style.display = 'block';
       skuDiv.innerHTML = '<span style="color:#4AC34A;font-weight:bold">SKU GENERADO:</span> ' +
