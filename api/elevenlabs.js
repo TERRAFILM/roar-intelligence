@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
 
   // GET CREDITS
   if (req.method === 'POST' && req.body && req.body.action === 'get_credits') {
-    const r = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
+    const r = await fetch('https://api.elevenlabs.io/v1/user', {
       headers: { 'xi-api-key': key }
     });
     const d = await r.json();
