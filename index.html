@@ -1513,7 +1513,7 @@ async function correrAuditoriaROAR(){
       body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: p }] })
     });
     const d = await r.json();
-    const resultado = d.content[0].text;
+    const resultado = (d.content && d.content[0] && d.content[0].text) ? d.content[0].text : (d.error ? 'Error API: ' + d.error.message : JSON.stringify(d).substring(0,200));
     out.textContent = resultado;
     // Mostrar boton regenerar si hay fallos
     const regenBtn = document.getElementById('regenerar-btn');
