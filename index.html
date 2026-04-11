@@ -1210,7 +1210,16 @@ async function genAudio(){
     });
     script = audioLines.join(' ').substring(0, 500);
   }
-  if(!script) script = packText.substring(0, 300);
+  if(!script){
+    const allQuoted = [];
+    packText.split('\n').forEach(function(line){
+      const l = line.trim();
+      if(l.startsWith('"') && l.length > 10){
+        allQuoted.push(l.replace(/"/g,'').trim());
+      }
+    });
+    script = allQuoted.join(' ').substring(0, 500);
+  }
 
   // Extraer prompt imagen
   // Extraer prompt imagen — solo el texto del prompt, sin el header
