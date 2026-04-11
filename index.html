@@ -244,7 +244,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <div class="card" style="margin-bottom:16px"><div class="ct">CONFIGURACION</div>
 <div class="il">
 <div><label>Segmento</label><select id="seg"><option value="carniceria">Carniceria</option><option value="mariscos">Mariscos/Pescaderia</option><option value="lavanderia">Lavanderia</option><option value="granel">Tienda a Granel</option><option value="industrial">Industrial</option></select></div>
-<div><label>Capa</label><select id="capa"><option value="AI">AI - Avatar + Script</option><option value="IM">IM - Intencion Media</option><option value="COMP">COMP - Comparador</option></select></div>
+<div><label>Capa</label><select id="capa"><option value="AI">AI - Avatar + Script HeyGen</option><option value="EOV">EOV - Evidencia Operativa Real</option><option value="IM">IM - Intencion Media</option><option value="MARCA">MARCA - Branding</option><option value="COMP">COMP - Comparativo</option></select></div>
 </div>
 <div style="margin-bottom:8px">
 <label style="font-size:11px;color:#999">Angulo / Hook principal</label>
@@ -419,9 +419,9 @@ function aprobar(btn,msg){
       for(const key in capaMap){
         if(textoAccion.includes(key)){ capaDetectada = capaMap[key]; break; }
       }
-      const segEl = document.getElementById('creat-seg');
-      const capaEl = document.getElementById('creat-capa');
-      const hookEl = document.getElementById('creat-hook');
+      const segEl = document.getElementById('seg');
+      const capaEl = document.getElementById('capa');
+      const hookEl = document.getElementById('ang');
       if(segEl && segDetectado){
         for(let i=0;i<segEl.options.length;i++){
           if(segEl.options[i].value.toLowerCase().includes(segDetectado.toLowerCase())){
@@ -476,61 +476,115 @@ async function genCreativo(){
   out.innerHTML='Generando pack creativo...';
   const segs={carniceria:'carniceria',mariscos:'marisqueria',lavanderia:'lavanderia',granel:'tienda granel',industrial:'industrial'};
   const segVal = segs[document.getElementById('seg').value] || document.getElementById('seg').value;
-    const capaVal = document.getElementById('capa').value;
-    const hookVal = document.getElementById('ang').value;
-    const p = 'Eres el sistema creativo de ROAR Plasticos GDL. Bolsa 50x70 Cal.170 La que no te deja tirado.' +
-      ' INTELIGENCIA COMPETITIVA ACTIVA (abril 2026):' +
-      ' COMPETENCIA: campo libre en Meta Ads B2B carniceria/marisqueria Mexico.' +
-      ' Unico competidor: Fortock — ad estatico sin hook sin segmento. Sin amenaza real.' +
-      ' NADIE en Meta habla de: giro especifico (carniceria/marisqueria), problemas reales de ruptura, ni da garantia tecnica.' +
-      ' VOCABULARIO REAL DEL OPERADOR (usar siempre, nunca tecnicismos):' +
-      ' "se truena" "se desfonda" "se cae la carne" "la jalo y se abre" "revienta al levantarla"' +
-      ' "los picos la perforan" "le pongo caliente y se derrite" "ya no pongo doble bolsa" "la que no te deja tirado".' +
-      ' PROBLEMAS REALES RESUELTOS POR ROAR:' +
-      ' 1) Sale del congelador y se truena por frio.' +
-      ' 2) No soporta el peso — se desfonda del sello.' +
-      ' 3) Material reciclado — se rompe sola al jalarla.' +
-      ' 4) Sello irregular — cabe mas arriba que abajo.' +
-      ' 5) La anudan la levantan y revienta el cuerpo.' +
-      ' 6) Comida caliente (frijoles/caldos) la revienta.' +
-      ' 7) Picos de camaron o huesos filosos la perforan.' +
-      ' ESTRUCTURA VIDEO GANADORA VALIDADA (usar como base):' +
-      ' 0-3s: Bolsa 20kg en bascula LED SIN avatar — nudo bajo tension — guante nitrilo azul — audio del carnicero empieza inmediato.' +
-      ' 3-6s: Problema visible — overlay texto en vocabulario operador.' +
-      ' 6-10s: Avatar carnicero — mandil mezclilla — letreros reales atras — testimonio primera persona — logo ROAR.' +
-      ' HOOK GANADOR BASE: carnicero habla en primera persona desde segundo 0 aunque no se ve.' +
-      ' COBERTURA: entrega a toda la republica mexicana.' +
-      ' ESTRUCTURA AD SETS: maximo 2 ads por ad set para evitar que Meta elija el malo.' +
-      ' REGLA META DIVERSIFICACION: los 2 ads del mismo ad set DEBEN ser visualmente diferentes — uno video/uno imagen, o diferentes angulos/entornos. Mismo concepto visual = Meta los trata como uno y limita alcance.' +
-      ' MOTIVACIONES DIFERENTES: cada ad debe apelar a una motivacion diferente del operador: perdida economica / imagen profesional / solucion tecnica / testimonio de par.' +
-      ' Segmento: ' + segVal + ' | Capa: ' + capaVal + ' | Hook: ' + hookVal +
-      ' REGLAS ANDROMEDA OBLIGATORIAS: LA BOLSA es protagonista, NO la carne/marisco.' +
-      ' R1: Entorno negocio en primeros 3 segundos (mostrador, bascula, cajas).' +
-      ' R2: Problema antes que producto (nudo tension, deformacion peso).' +
-      ' R3: Volumen visual, no en copy.' +
-      ' REGLAS PRODUCTO: CARNE=cherry-red+marbling blanco NUNCA oscura. CAMARON=gris translucido+escarcha NUNCA rosa.' +
-      ' Bascula=20.00kg LED verde. Bolsa 50x70 llena 85% oval. Guantes azules nitrilo. Sangre solo adentro.' +
-      ' Ambiente=BRILLANTE mexicano, paredes blancas, acero inox, fluorescentes. CERO oscuro.' +
-      ' UNIFORME: mandil mezclilla oscura sobre polo gris (NO mandil blanco).' +
+  const capaVal = document.getElementById('capa').value;
+  const hookVal = document.getElementById('ang').value;
+
+  // Base comun a todas las capas
+  const base = 'Eres el sistema creativo de ROAR Plasticos GDL. Bolsa 50x70 Cal.170 La que no te deja tirado.' +
+    ' Segmento: ' + segVal + ' | Capa: ' + capaVal + ' | Hook: ' + hookVal +
+    ' VOCABULARIO REAL DEL OPERADOR (usar siempre, nunca tecnicismos):' +
+    ' "se truena" "se desfonda" "se cae la carne" "la jalo y se abre" "revienta al levantarla"' +
+    ' "los picos la perforan" "le pongo caliente y se derrite" "ya no pongo doble bolsa" "la que no te deja tirado".' +
+    ' PROBLEMAS REALES RESUELTOS POR ROAR:' +
+    ' 1) Sale del congelador y se truena por frio. 2) No soporta el peso — se desfonda del sello.' +
+    ' 3) Material reciclado — se rompe sola al jalarla. 4) Sello irregular — cabe mas arriba que abajo.' +
+    ' 5) La anudan la levantan y revienta el cuerpo. 6) Comida caliente (frijoles/caldos) la revienta.' +
+    ' 7) Picos de camaron o huesos filosos la perforan.' +
+    ' REGLAS ANDROMEDA OBLIGATORIAS: LA BOLSA es protagonista, NO la carne/marisco.' +
+    ' R1: Entorno negocio en primeros 3s. R2: Problema antes que producto. R3: Volumen visual, no en copy.' +
+    ' REGLAS PRODUCTO: CARNE=cherry-red+marbling blanco NUNCA oscura. CAMARON=gris translucido+escarcha NUNCA rosa.' +
+    ' Bascula=20.00kg LED verde. Bolsa 50x70 llena 85% oval. Guantes azules nitrilo. Sangre solo adentro.' +
+    ' Ambiente=BRILLANTE mexicano, paredes blancas, acero inox, fluorescentes. CERO oscuro.' +
+    ' UNIFORME: mandil mezclilla oscura sobre polo gris (NO mandil blanco).' +
+    ' COBERTURA: entrega a toda la republica mexicana.' +
+    ' REGLA CRITICA VOCABULARIO: NUNCA mencionar Cal.170 o Calibre 170 en el AUDIO o SCRIPT — solo decir bolsas ROAR o la bolsa. Cal.170 puede ir SOLO en copy escrito de Meta Ads.' +
+    ' REGLA CRITICA CTA: El CTA SIEMPRE debe decir WHATSAPP explicitamente. NUNCA solo Mandame mensaje.' +
+    ' REGLA ABSOLUTA: NUNCA inventar numeros de telefono ni datos de contacto. Solo decir WhatsApp sin numero.';
+
+  // Prompts especificos por capa — cada capa genera SOLO su tipo de creativo
+  var capaPrompts = {
+    'AI': ' CAPA AI — AVATAR + SCRIPT HEYGEN.' +
+      ' Este pack es VIDEO con avatar HeyGen hablando a camara.' +
       ' ESTRUCTURA VIDEO 12-14 segundos:' +
-      ' 0-3s: SOLO BOLSA close-up nudo tension, carne cherry-red visible a traves del plastico, SIN avatar.' +
-      ' 3-7s: Problema/educativo, overlay texto blanco bold, zona 35-55% vertical.' +
-      ' 7-12s: Avatar HeyGen cierre + CTA + logo ROAR.' +
+      ' 0-3s: SOLO BOLSA close-up nudo tension SIN avatar — audio del carnicero empieza inmediato.' +
+      ' 3-7s: Problema/educativo, overlay texto blanco bold.' +
+      ' 7-12s: Avatar HeyGen cierre + CTA WhatsApp + logo ROAR.' +
       ' HEYGEN: voz Enrique Mondragon, Spanish Mexico, ElevenLabs V3, estabilidad 60-65%, tono carnicero coloquial NO locutor.' +
-      ' REGLA CRITICA VOCABULARIO: NUNCA mencionar Cal.170 o Calibre 170 en el AUDIO o SCRIPT — solo decir bolsas ROAR o la bolsa. Cal.170 puede ir SOLO en copy escrito de Meta Ads.' +
-      ' REGLA CRITICA CTA: El CTA SIEMPRE debe decir WHATSAPP explicitamente — ejemplo: Mandame WhatsApp / Escribeme al WhatsApp / Pidela por WhatsApp. NUNCA solo Mandame mensaje o Te interesa.' +
-      ' REGLA ABSOLUTA: NUNCA inventar numeros de telefono, numeros de WhatsApp, ni datos de contacto. Solo decir WhatsApp sin numero.' +
       ' AUDIO: ambiente industrial -20dB, CERO musica alegre.' +
       ' Genera PACK COMPLETO en este orden exacto:' +
       ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
       ' (prompt detallado para generar imagen limpia SIN TEXTO, bolsa protagonista, entorno negocio)' +
       ' ## 2) SCRIPT HEYGEN 12-14SEG DOCUMENTAL MEXICANO' +
-      ' (guion completo con timecodes 0-3s 3-7s 7-12s, overlay texto, narracion avatar)' +
+      ' (guion completo con timecodes 0-3s 3-7s 7-12s, overlay texto, narracion avatar con lineas de audio entre comillas)' +
       ' ## 3) COPY META ADS - 3 VARIANTES' +
-      ' (Ganador/Miedo perdida/Social proof, tono coloquial mexicano, max 125 caracteres cada uno)' +
+      ' (Ganador/Miedo perdida/Social proof, max 125 caracteres cada uno)' +
       ' ## 4) INSTRUCCIONES CAPCUT' +
-      ' (zonas seguras Stories 14/20, Reels 14/35/6, fuente blanca bold, posicion texto)' +
-      ' Max 500 palabras total.';
+      ' (zonas seguras Stories 14/20, Reels 14/35/6, fuente blanca bold)' +
+      ' Max 500 palabras total.',
+
+    'EOV': ' CAPA EOV — EVIDENCIA OPERATIVA REAL.' +
+      ' Este pack es VIDEO/FOTO de evidencia real filmada en el negocio del cliente. NO usa avatar HeyGen.' +
+      ' CONCEPTO: video crudo, real, grabado con celular en carniceria/marisqueria real. Bolsa bajo estres real.' +
+      ' CONTENIDO: la bolsa aguantando peso real, congelador real, operacion diaria real.' +
+      ' TONO: cero produccion, cero locutor. Audio ambiente real del negocio.' +
+      ' Genera PACK COMPLETO:' +
+      ' ## 1) GUION DE GRABACION EOV' +
+      ' (que filmar paso a paso: plano 1 bolsa en bascula, plano 2 nudo bajo tension, plano 3 operador sacando de congelador — 3 a 5 planos de 2-3s cada uno)' +
+      ' ## 2) TEXTO OVERLAY PARA EDICION' +
+      ' (frases cortas en vocabulario operador para sobreimponer en cada plano)' +
+      ' ## 3) COPY META ADS - 3 VARIANTES' +
+      ' (tono testimonial real, max 125 caracteres cada uno)' +
+      ' ## 4) INSTRUCCIONES CAPCUT' +
+      ' (cortes rapidos, sin transiciones fancy, fuente blanca bold)' +
+      ' Max 400 palabras total.',
+
+    'IM': ' CAPA IM — INTENCION MEDIA.' +
+      ' Este pack es IMAGEN ESTATICA o CARRUSEL para captar atencion media en el feed. NO video, NO avatar.' +
+      ' CONCEPTO: imagen llamativa con la bolsa protagonista + overlay texto con hook del problema.' +
+      ' La imagen debe detener el scroll — visual impactante de la bolsa en contexto de negocio real.' +
+      ' Genera PACK COMPLETO:' +
+      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
+      ' (prompt detallado: bolsa protagonista, entorno negocio, SIN TEXTO en la imagen, composicion vertical para Stories/Reels)' +
+      ' ## 2) PROMPT IMAGEN ELEVENLABS 1:1' +
+      ' (misma escena adaptada a formato cuadrado para feed)' +
+      ' ## 3) TEXTO OVERLAY PARA DISEÑO' +
+      ' (headline + subhead + CTA en vocabulario operador — para sobreimponer en Canva/CapCut)' +
+      ' ## 4) COPY META ADS - 3 VARIANTES' +
+      ' (hook visual, curiosidad, max 125 caracteres cada uno)' +
+      ' Max 400 palabras total.',
+
+    'MARCA': ' CAPA MARCA — BRANDING.' +
+      ' Este pack es contenido de MARCA/BRAND para construir autoridad y reconocimiento. NO es performance directo.' +
+      ' CONCEPTO: posicionar ROAR como el especialista en bolsas para negocios de alimentos en Mexico.' +
+      ' TONO: profesional pero cercano, autoridad tecnica sin tecnicismos, orgullo de marca mexicana.' +
+      ' Genera PACK COMPLETO:' +
+      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
+      ' (prompt: producto hero shot, bolsa protagonista con iluminacion premium, entorno profesional, cero carne visible)' +
+      ' ## 2) COPY BRAND - 3 VARIANTES' +
+      ' (brand promise / autoridad tecnica / origen mexicano, max 150 caracteres cada uno)' +
+      ' ## 3) HASHTAGS Y CONTEXTO' +
+      ' (hashtags relevantes, momento de publicacion sugerido, plataforma ideal)' +
+      ' Max 300 palabras total.',
+
+    'COMP': ' CAPA COMP — COMPARATIVO.' +
+      ' Este pack es contenido COMPARATIVO: ROAR vs competencia generica / vs doble bolsa / vs material reciclado.' +
+      ' CONCEPTO: demostrar superioridad de la bolsa ROAR 50x70 Cal.170 con datos y comparacion directa.' +
+      ' NUNCA nombrar marcas competidoras por nombre — comparar contra "la bolsa del mercado" o "la bolsa barata".' +
+      ' ESTRUCTURA: problema con bolsa generica → solucion con ROAR → matematicas del ahorro.' +
+      ' Genera PACK COMPLETO:' +
+      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
+      ' (prompt: split visual lado a lado — izquierda bolsa rota/desfondada vs derecha bolsa ROAR intacta con peso)' +
+      ' ## 2) TABLA COMPARATIVA' +
+      ' (3-5 criterios: resistencia, sello, peso max, doble bolsa, costo real — ROAR gana en todos)' +
+      ' ## 3) COPY META ADS - 3 VARIANTES' +
+      ' (comparativo directo, matematicas de ahorro, reto al operador, max 125 caracteres cada uno)' +
+      ' ## 4) INSTRUCCIONES CAPCUT' +
+      ' (formato split o carrusel, transiciones de revelacion)' +
+      ' Max 400 palabras total.'
+  };
+
+  var capaExtra = capaPrompts[capaVal] || capaPrompts['AI'];
+  const p = base + capaExtra;
   try{
     const r=await claude(p);
     out.textContent=r;
@@ -679,17 +733,22 @@ async function genAudio(){
       if(status) status.textContent = '❌ Error: '+e.message;
     }
     if(btn){ btn.disabled = false; btn.textContent = '📋 Cargar datos reales de Kommo'; }
-    // Guardar menciones de problema para Intelligence V2
-    const p1 = document.getElementById('k-p1') ? document.getElementById('k-p1').value : '0';
-    const p2 = document.getElementById('k-p2') ? document.getElementById('k-p2').value : '0';
-    const p3 = document.getElementById('k-p3') ? document.getElementById('k-p3').value : '0';
-    const p4 = document.getElementById('k-p4') ? document.getElementById('k-p4').value : '0';
-    const p5 = document.getElementById('k-p5') ? document.getElementById('k-p5').value : '0';
-    const p6 = document.getElementById('k-p6') ? document.getElementById('k-p6').value : '0';
-    const p7 = document.getElementById('k-p7') ? document.getElementById('k-p7').value : '0';
-    actualizarContextoPanel();
-    window._compMenciones = 'Se rompe/truena:' + p1 + ' Doble bolsa:' + p2 + ' No soporta peso:' + p3 + ' Frio congelador:' + p4 + ' Calor revienta:' + p5 + ' Picos perforan:' + p6 + ' Solo precio:' + p7;
+    guardarMencionesWA();
   }
+
+  function guardarMencionesWA(){
+    const g = function(id){ const el = document.getElementById(id); return el ? el.value || '0' : '0'; };
+    window._compMenciones = 'Se rompe/truena:' + g('k-p1') + ' Doble bolsa:' + g('k-p2') + ' No soporta peso:' + g('k-p3') + ' Frio congelador:' + g('k-p4') + ' Calor revienta:' + g('k-p5') + ' Picos perforan:' + g('k-p6') + ' Solo precio:' + g('k-p7');
+    actualizarContextoPanel();
+  }
+
+  // Auto-guardar menciones cada vez que el usuario cambia un campo k-p*
+  document.addEventListener('DOMContentLoaded', function(){
+    ['k-p1','k-p2','k-p3','k-p4','k-p5','k-p6','k-p7'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.addEventListener('input', guardarMencionesWA);
+    });
+  });
 
 
   let heygenVideoId = null;
@@ -1158,9 +1217,9 @@ async function genAudio(){
 async function regenerarConCorrecciones(){
   const audOut = document.getElementById('auditoria-out');
   const packOut = document.getElementById('creat-out');
-  const segVal = document.getElementById('creat-seg') ? document.getElementById('creat-seg').value : '';
-  const capaVal = document.getElementById('creat-capa') ? document.getElementById('creat-capa').value : '';
-  const hookVal = document.getElementById('creat-hook') ? document.getElementById('creat-hook').value : '';
+  const segVal = document.getElementById('seg') ? document.getElementById('seg').value : '';
+  const capaVal = document.getElementById('capa') ? document.getElementById('capa').value : '';
+  const hookVal = document.getElementById('ang') ? document.getElementById('ang').value : '';
   const correcciones = audOut ? audOut.textContent : '';
   if(!correcciones){ alert('Corre la auditoria primero.'); return; }
 
@@ -1365,18 +1424,20 @@ function exportarAApp2(){
     roar_pack_app2: {
       sku: sku,
       pack: pack,
-      segmento: document.getElementById('creat-seg') ? document.getElementById('creat-seg').value : '',
-      capa: document.getElementById('creat-capa') ? document.getElementById('creat-capa').value : '',
+      segmento: document.getElementById('seg') ? document.getElementById('seg').value : '',
+      capa: document.getElementById('capa') ? document.getElementById('capa').value : '',
       hook: document.getElementById('ang') ? document.getElementById('ang').value : '',
       timestamp: new Date().toISOString()
     }
   });
-  localStorage.setItem('roar_pack_app2', exportData);
+  var encoded = btoa(unescape(encodeURIComponent(exportData)));
+  var url = 'https://roar-creativos.vercel.app?pack=' + encodeURIComponent(encoded);
   navigator.clipboard.writeText(exportData).then(function(){
-    document.getElementById('export-status').textContent = '✅ Pack copiado al clipboard — pega en App 2';
+    document.getElementById('export-status').textContent = '✅ Pack copiado al clipboard + abriendo App 2...';
   }).catch(function(){
-    document.getElementById('export-status').textContent = '✅ Pack guardado en localStorage — listo para App 2';
+    document.getElementById('export-status').textContent = '✅ Abriendo App 2 con pack...';
   });
+  window.open(url, '_blank');
 }
 
 function actualizarContextoPanel(){
@@ -1414,9 +1475,9 @@ async function correrAuditoriaROAR(){
   out.style.display = 'block';
   out.textContent = 'Analizando pack con criterios ROAR...';
 
-  const segVal = document.getElementById('creat-seg') ? document.getElementById('creat-seg').value : '';
-  const capaVal = document.getElementById('creat-capa') ? document.getElementById('creat-capa').value : '';
-  const hookVal = document.getElementById('creat-hook') ? document.getElementById('creat-hook').value : '';
+  const segVal = document.getElementById('seg') ? document.getElementById('seg').value : '';
+  const capaVal = document.getElementById('capa') ? document.getElementById('capa').value : '';
+  const hookVal = document.getElementById('ang') ? document.getElementById('ang').value : '';
 
   const p = 'Eres el auditor de creativos de ROAR Plasticos GDL. ' +
     'Analiza este pack creativo y evalua CADA criterio con APROBADO o FALLO + razon de una linea. ' +
@@ -1538,8 +1599,8 @@ async function correrAuditoriaROAR(){
     // Solo registrar en Campana si APROBADO y NO RECHAZADO — no tocar visibilidad del boton producir (ya la maneja el calibrador)
     const auditResultText = out.textContent || '';
     if(auditResultText.includes('APROBADO') && !auditResultText.includes('RECHAZADO')){
-      const segVal2 = document.getElementById('creat-seg') ? document.getElementById('creat-seg').value : '';
-      const capaVal2 = document.getElementById('creat-capa') ? document.getElementById('creat-capa').value : '';
+      const segVal2 = document.getElementById('seg') ? document.getElementById('seg').value : '';
+      const capaVal2 = document.getElementById('capa') ? document.getElementById('capa').value : '';
       const hookVal2 = document.getElementById('ang') ? document.getElementById('ang').value : '';
       if(skuMatch && typeof registrarEnCampana === 'function') registrarEnCampana(skuMatch[1], segVal2, capaVal2, hookVal2);
     }
