@@ -635,6 +635,7 @@ async function genCreativo(){
       ' HEYGEN: voz Enrique Mondragon, Spanish Mexico, ElevenLabs V3, estabilidad 60-65%, tono carnicero coloquial NO locutor.' +
       ' REGLA CRITICA VOCABULARIO: NUNCA mencionar Cal.170 o Calibre 170 en el AUDIO o SCRIPT — solo decir bolsas ROAR o la bolsa. Cal.170 puede ir SOLO en copy escrito de Meta Ads.' +
       ' REGLA CRITICA CTA: El CTA SIEMPRE debe decir WHATSAPP explicitamente — ejemplo: Mandame WhatsApp / Escribeme al WhatsApp / Pidela por WhatsApp. NUNCA solo Mandame mensaje o Te interesa.' +
+      ' REGLA ABSOLUTA: NUNCA inventar numeros de telefono, numeros de WhatsApp, ni datos de contacto. Solo decir WhatsApp sin numero.' +
       ' AUDIO: ambiente industrial -20dB, CERO musica alegre.' +
       ' Genera PACK COMPLETO en este orden exacto:' +
       ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
@@ -1571,7 +1572,9 @@ async function correrAuditoriaROAR(){
       // CRITICOS: Andromeda + Estructura — bloquean produccion sin importar nada
       // MAYORES: CTA + Problema — requieren regenerar
       // MENORES: Vocabulario (copy escrito) + Entorno + Segmento — Camilo decide
-      const fallaAndromeda = /1\).*FALLO|ANDROMEDA.*FALLO/i.test(resultado);
+      // Si el veredicto dice RECHAZADO — bloquear todo independientemente
+      const esRechazado = /RECHAZADO/i.test(resultado);
+      const fallaAndromeda = esRechazado || /1\).*FALLO|ANDROMEDA.*FALLO/i.test(resultado);
       const fallaEstructura = /6\).*FALLO|ESTRUCTURA.*FALLO/i.test(resultado);
       const fallaCTA = /7\).*FALLO|CTA.*FALLO/i.test(resultado);
       const fallaProblema = /3\).*FALLO|PROBLEMA.*FALLO/i.test(resultado);
