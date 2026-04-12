@@ -52,6 +52,14 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 .signal{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .si{background:#1a1a1a;border-radius:8px;padding:12px;font-size:12px}
 .si-ok{border-left:3px solid #0f0}.si-bad{border-left:3px solid #f44}
+.stepper{display:flex;align-items:center;gap:6px;margin-top:4px}
+.stepper input[type=number]{flex:1;text-align:center;padding:10px 4px;font-size:16px;font-weight:bold;-moz-appearance:textfield}
+.stepper input[type=number]::-webkit-outer-spin-button,.stepper input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stepper button{width:38px;height:38px;border:none;border-radius:8px;font-size:20px;font-weight:bold;cursor:pointer;flex-shrink:0;padding:0;line-height:1;touch-action:manipulation;user-select:none}
+.stepper .st-m{background:#2a2a2a;color:#fff;border:1px solid #3a3a3a}
+.stepper .st-m:active{background:#1a1a1a}
+.stepper .st-p{background:#4AC34A;color:#fff}
+.stepper .st-p:active{background:#3a9c3a}
 </style>
 </head>
 <body>
@@ -116,14 +124,15 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 </div>
 <div style="margin-top:12px;margin-bottom:8px;font-size:11px;color:#4AC34A;font-weight:bold">MENCIONES DE PROBLEMA (contar en conversaciones WA)</div>
 <div class="il">
-<div><label>&#128994; Se rompe/truena</label><input type="number" id="k-p1" placeholder="0"></div>
-<div><label>&#128994; Doble bolsa</label><input type="number" id="k-p2" placeholder="0"></div>
-<div><label>&#128994; No soporta peso</label><input type="number" id="k-p3" placeholder="0"></div>
-<div><label>&#128994; Frio congelador</label><input type="number" id="k-p4" placeholder="0"></div>
-<div><label>&#128994; Calor revienta</label><input type="number" id="k-p5" placeholder="0"></div>
-<div><label>&#128994; Picos perforan</label><input type="number" id="k-p6" placeholder="0"></div>
-<div><label>&#128994; Solo precio</label><input type="number" id="k-p7" placeholder="0"></div>
+<div><label>&#128994; Se rompe/truena</label><div class="stepper"><button type="button" class="st-m" onclick="stepMencion('k-p1',-1)">&minus;</button><input type="number" inputmode="numeric" id="k-p1" value="0"><button type="button" class="st-p" onclick="stepMencion('k-p1',1)">+</button></div></div>
+<div><label>&#128994; Doble bolsa</label><div class="stepper"><button type="button" class="st-m" onclick="stepMencion('k-p2',-1)">&minus;</button><input type="number" inputmode="numeric" id="k-p2" value="0"><button type="button" class="st-p" onclick="stepMencion('k-p2',1)">+</button></div></div>
+<div><label>&#128994; No soporta peso</label><div class="stepper"><button type="button" class="st-m" onclick="stepMencion('k-p3',-1)">&minus;</button><input type="number" inputmode="numeric" id="k-p3" value="0"><button type="button" class="st-p" onclick="stepMencion('k-p3',1)">+</button></div></div>
+<div><label>&#128994; Frio congelador</label><div class="stepper"><button type="button" class="st-m" onclick="stepMencion('k-p4',-1)">&minus;</button><input type="number" inputmode="numeric" id="k-p4" value="0"><button type="button" class="st-p" onclick="stepMencion('k-p4',1)">+</button></div></div>
+<div><label>&#128994; Calor revienta</label><div class="stepper"><button type="button" class="st-m" onclick="stepMencion('k-p5',-1)">&minus;</button><input type="number" inputmode="numeric" id="k-p5" value="0"><button type="button" class="st-p" onclick="stepMencion('k-p5',1)">+</button></div></div>
+<div><label>&#128994; Picos perforan</label><div class="stepper"><button type="button" class="st-m" onclick="stepMencion('k-p6',-1)">&minus;</button><input type="number" inputmode="numeric" id="k-p6" value="0"><button type="button" class="st-p" onclick="stepMencion('k-p6',1)">+</button></div></div>
+<div><label>&#128994; Solo precio</label><div class="stepper"><button type="button" class="st-m" onclick="stepMencion('k-p7',-1)">&minus;</button><input type="number" inputmode="numeric" id="k-p7" value="0"><button type="button" class="st-p" onclick="stepMencion('k-p7',1)">+</button></div></div>
 </div>
+<button type="button" class="btn bs" onclick="limpiarSemanaWA()" style="width:100%;margin-top:8px;margin-bottom:8px;font-size:11px">&#128465;&#65039; Limpiar semana (resetear menciones a 0)</button>
 <textarea id="k-extra" rows="2" placeholder="Observaciones Paty..."></textarea>
 </div>
 <button class="btn bp" onclick="runIntel()">&#129504; Correr Intelligence V2</button>
@@ -775,12 +784,63 @@ async function genAudio(){
     actualizarContextoPanel();
   }
 
-  // Auto-guardar menciones cada vez que el usuario cambia un campo k-p*
-  document.addEventListener('DOMContentLoaded', function(){
-    ['k-p1','k-p2','k-p3','k-p4','k-p5','k-p6','k-p7'].forEach(function(id){
-      var el = document.getElementById(id);
-      if(el) el.addEventListener('input', guardarMencionesWA);
+  // Persistencia localStorage bajo 'roar_menciones_wa'
+  const MENCIONES_IDS = ['k-p1','k-p2','k-p3','k-p4','k-p5','k-p6','k-p7'];
+
+  function persistMencionesWA(){
+    const data = {};
+    MENCIONES_IDS.forEach(function(id){
+      const el = document.getElementById(id);
+      data[id] = el ? (el.value || '0') : '0';
     });
+    try { localStorage.setItem('roar_menciones_wa', JSON.stringify(data)); } catch(e){}
+  }
+
+  function restaurarMencionesWA(){
+    try {
+      const raw = localStorage.getItem('roar_menciones_wa');
+      if(!raw) return;
+      const data = JSON.parse(raw);
+      MENCIONES_IDS.forEach(function(id){
+        const el = document.getElementById(id);
+        if(el && data[id] !== undefined) el.value = data[id];
+      });
+      guardarMencionesWA();
+    } catch(e){}
+  }
+
+  function stepMencion(id, delta){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const cur = parseInt(el.value || '0', 10);
+    const next = Math.max(0, (isNaN(cur) ? 0 : cur) + delta);
+    el.value = next;
+    guardarMencionesWA();
+    persistMencionesWA();
+  }
+
+  function limpiarSemanaWA(){
+    if(!confirm('Limpiar menciones de esta semana y resetear todos los contadores a 0?')) return;
+    MENCIONES_IDS.forEach(function(id){
+      const el = document.getElementById(id);
+      if(el) el.value = '0';
+    });
+    try { localStorage.removeItem('roar_menciones_wa'); } catch(e){}
+    guardarMencionesWA();
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:60px;right:20px;background:#4AC34A;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:bold;z-index:9999';
+    banner.textContent = 'Menciones WA limpiadas — semana nueva';
+    document.body.appendChild(banner);
+    setTimeout(function(){ banner.remove(); }, 2500);
+  }
+
+  // Auto-guardar + persistir + restaurar al cargar
+  document.addEventListener('DOMContentLoaded', function(){
+    MENCIONES_IDS.forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.addEventListener('input', function(){ guardarMencionesWA(); persistMencionesWA(); });
+    });
+    restaurarMencionesWA();
   });
 
 
