@@ -1531,7 +1531,8 @@ async function correrAuditoriaROAR(){
 
   const esEOV = (capaVal === 'EOV');
   const esImagen = (capaVal === 'IM' || capaVal === 'MARCA');
-  const tipoAudit = esImagen ? 'IMAGEN ESTATICA (sin audio, sin timecodes)' : esEOV ? 'VIDEO EOV (evidencia operativa real)' : 'VIDEO CON AVATAR';
+  const esCOMP = (capaVal === 'COMP');
+  const tipoAudit = esImagen ? 'IMAGEN ESTATICA (sin audio, sin timecodes)' : esEOV ? 'VIDEO EOV (evidencia operativa real)' : esCOMP ? 'VIDEO/SPLIT COMPARATIVO (sin avatar)' : 'VIDEO CON AVATAR';
 
   // Defaults = video con avatar (AI, COMP)
   let criterio1 = ' 1) ANDROMEDA: La bolsa ROAR es protagonista visual en 0-3s (no la carne/marisco)';
@@ -1545,6 +1546,11 @@ async function correrAuditoriaROAR(){
   if(esEOV){
     criterio1 = ' 1) ANDROMEDA (regla especial EOV): La bolsa generica que FALLA es protagonista visual del problema en 0-3s — NO la carne/marisco sola. APROBADO si: (a) 0-3s muestra el PROBLEMA con una bolsa generica (bolsa que se truena, se desfonda, se rompe, la perforan) y esa bolsa fallida es el foco visual, (b) la bolsa ROAR aparece como solucion DESPUES del segundo 7. FALLO solo si: 0-3s muestra unicamente carne/marisco sin ninguna bolsa visible, o la carne/marisco es el foco visual en vez del fallo de la bolsa. IMPORTANTE: en EOV esta BIEN que la bolsa ROAR no aparezca en 0-3s — esa es la formula ganadora.';
     criterio6 = ' 6) ESTRUCTURA EOV: 0-3s problema visible con bolsa generica + audio dolor operador / 3-7s overlay texto del problema (la bolsa ROAR AUN no aparece) / 7-12s bolsa ROAR protagonista como solucion + CTA WhatsApp. FALLO si la bolsa ROAR aparece antes del segundo 7.';
+  }
+
+  if(esCOMP){
+    criterio1 = ' 1) ANDROMEDA (regla especial COMP — split comparativo): El pack COMP es un split screen o comparativo directo entre bolsa ROAR y bolsa generica. APROBADO si AMBAS bolsas (ROAR y generica) son protagonistas visuales del split — el CONTRASTE entre las dos bolsas ES el protagonismo. NO se requiere que ROAR sea la unica bolsa en 0-3s. FALLO solo si la carne/marisco domina visualmente en vez del contraste entre bolsas, o si no hay bolsas visibles en el split.';
+    criterio6 = ' 6) ESTRUCTURA COMP (split comparativo sin avatar): 0-3s entorno de carniceria/marisqueria con AMBAS bolsas visibles (ROAR vs generica) / 3-7s problema de la bolsa generica destacado (rota, desfondada, doble bolsa) / 7-15s comparacion directa ROAR vs generica (split lado a lado, ROAR aguantando, generica fallando) / 15s+ matematicas del ahorro + CTA WhatsApp. APROBADO si sigue esta formula comparativa. IMPORTANTE: COMP NO tiene avatar — la tabla comparativa y el split screen SON el formato. NO penalices la ausencia de avatar HeyGen ni de narracion a camara.';
   }
 
   if(esImagen){
@@ -1569,6 +1575,7 @@ async function correrAuditoriaROAR(){
     'Analiza este pack creativo y evalua CADA criterio con APROBADO o FALLO + razon de una linea. ' +
     'CAPA DEL PACK: ' + capaVal + ' — TIPO DE CREATIVO: ' + tipoAudit + '. ' +
     (esEOV ? 'Aplicar reglas especiales EOV en criterios 1 y 6. ' : '') +
+    (esCOMP ? 'Aplicar reglas especiales COMP en criterios 1 y 6 — este es un video/split comparativo sin avatar. NO penalices ausencia de avatar HeyGen ni narracion a camara — la tabla comparativa y el split screen SON el formato. El contraste entre la bolsa ROAR y la bolsa generica ES el protagonismo visual. ' : '') +
     (esImagen ? 'Aplicar criterios de IMAGEN ESTATICA — NO hay audio, NO hay timecodes de video, evalua composicion visual + copy + overlay. NO penalices la ausencia de script o audio porque no aplica en este formato. El pack IM tiene 4 secciones: (1) PROMPT IMAGEN ELEVENLABS 9:16, (2) PROMPT IMAGEN ELEVENLABS 1:1, (3) TEXTO OVERLAY PARA DISENO, (4) COPY META ADS - 3 VARIANTES. LEE las 4 secciones antes de evaluar — especialmente overlay y copy donde vive el problema, vocabulario y CTA. ' : '') +
     'CRITERIOS A EVALUAR:' +
     criterio1 +
