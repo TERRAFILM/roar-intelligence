@@ -61,6 +61,36 @@ module.exports = async function handler(req, res) {
         });
       }
 
+      if (body.action === 'debug_talks') {
+        const base = `https://${subdomain}.kommo.com/api/v4`;
+
+        const hit = async (label, url) => {
+          const started = Date.now();
+          const r = await fetchJson(url);
+          const ms = Date.now() - started;
+          return {
+            label, url, ok: r.ok, status: r.status, ms,
+            data: r.data,
+            _parsed: r.data !== null,
+            _rawPreview: r.data === null ? (r.rawText || '').slice(0, 500) : undefined,
+            error: r.error
+          };
+        };
+
+        const calls = await Promise.all([
+          hit('talk_831',          `${base}/talks/831`),
+          hit('talk_831_messages', `${base}/talks/831/messages?limit=10`),
+          hit('talk_1348_messages',`${base}/talks/1348/messages?limit=10`)
+        ]);
+
+        return res.status(200).json({
+          ok: true,
+          subdomain: subdomain || null,
+          hasToken: Boolean(token),
+          calls: calls
+        });
+      }
+
       if (body.action === 'debug_events') {
         const base = `https://${subdomain}.kommo.com/api/v4`;
 
