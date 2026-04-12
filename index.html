@@ -510,7 +510,11 @@ async function genCreativo(){
     ' COBERTURA: entrega a toda la republica mexicana.' +
     ' REGLA CRITICA VOCABULARIO: NUNCA mencionar Cal.170 o Calibre 170 en el AUDIO o SCRIPT — solo decir bolsas ROAR o la bolsa. Cal.170 puede ir SOLO en copy escrito de Meta Ads.' +
     ' REGLA CRITICA CTA: El CTA SIEMPRE debe decir WHATSAPP explicitamente. NUNCA solo Mandame mensaje.' +
-    ' REGLA ABSOLUTA: NUNCA inventar numeros de telefono ni datos de contacto. Solo decir WhatsApp sin numero.';
+    ' REGLA ABSOLUTA: NUNCA inventar numeros de telefono ni datos de contacto. Solo decir WhatsApp sin numero.' +
+    ' ============ REGLAS FINALES OBLIGATORIAS — TODAS LAS CAPAS ============' +
+    ' REGLA FINAL 1 — CTA WHATSAPP OBLIGATORIO EN EL VIDEO: toda pieza debe cerrar con un CTA verbal y visual que diga literalmente "Mandame WhatsApp" o "Escribeme al WhatsApp". NUNCA incluir numero de telefono ni datos de contacto inventados. El CTA debe estar tanto en el audio como en overlay de texto.' +
+    ' REGLA FINAL 2 — PROBLEMA ANTES QUE SOLUCION EN LOS PRIMEROS 7 SEGUNDOS: el dolor/problema del operador (bolsa que se truena, se desfonda, se rompe, los picos la perforan) debe aparecer ANTES que cualquier mencion visual o verbal de la solucion ROAR. Si la bolsa ROAR aparece como protagonista antes del segundo 7 el creativo esta CONTAMINADO y debe rechazarse.' +
+    ' REGLA FINAL 3 — LA BOLSA ES SIEMPRE EL PROTAGONISTA VISUAL: la camara, el enfoque, la luz y la atencion visual siempre estan sobre la bolsa — nunca sobre la carne, el marisco, el pollo ni ningun producto contenido. Si el viewer piensa "que buena carne" el creativo FALLO Andromeda. El viewer debe pensar "esa bolsa aguanta todo".';
 
   // Prompts especificos por capa — cada capa genera SOLO su tipo de creativo
   var capaPrompts = {
@@ -538,16 +542,21 @@ async function genCreativo(){
       ' CONCEPTO: video crudo, real, grabado con celular en carniceria/marisqueria real. Bolsa bajo estres real.' +
       ' CONTENIDO: la bolsa aguantando peso real, congelador real, operacion diaria real.' +
       ' TONO: cero produccion, cero locutor. Audio ambiente real del negocio.' +
+      ' ESTRUCTURA GANADORA OBLIGATORIA 12 SEGUNDOS — NO DESVIARSE:' +
+      ' 0-3s: PROBLEMA VISIBLE — el operador muestra el problema real en camara (bolsa que se truena al sacarla del congelador, se desfonda con el peso, se rompe al jalarla, los picos la perforan). Audio del operador describiendo EL DOLOR en primera persona con vocabulario real — "se me truena" "se me desfonda" "se me cae la carne". La bolsa ROAR AUN NO APARECE. Solo el problema con la bolsa mala.' +
+      ' 3-7s: OVERLAY TEXTO bold blanco del problema sobre plano detalle del fallo (bolsa rota, carne en el piso, producto perdido). La SOLUCION AUN NO APARECE. Seguir anclando el dolor.' +
+      ' 7-12s: BOLSA ROAR protagonista — aparece por primera vez como contraste/solucion. Plano close-up de la bolsa ROAR aguantando el mismo peso sin romperse. CTA WhatsApp explicito en overlay y audio: "Mandame WhatsApp" o "Escribeme al WhatsApp". Logo ROAR al cierre. CERO numero de telefono.' +
+      ' REGLA ABSOLUTA EOV: problema ANTES que producto — si la bolsa ROAR aparece antes del segundo 7 el creativo esta CONTAMINADO.' +
       ' Genera PACK COMPLETO:' +
-      ' ## 1) GUION DE GRABACION EOV' +
-      ' (que filmar paso a paso: plano 1 bolsa en bascula, plano 2 nudo bajo tension, plano 3 operador sacando de congelador — 3 a 5 planos de 2-3s cada uno)' +
+      ' ## 1) GUION DE GRABACION EOV (12 seg con timecodes 0-3s / 3-7s / 7-12s explicitos)' +
+      ' (plano 0-3s: problema visible con bolsa mala + audio dolor operador. plano 3-7s: detalle del fallo + overlay problema. plano 7-12s: bolsa ROAR aguantando + CTA WhatsApp)' +
       ' ## 2) TEXTO OVERLAY PARA EDICION' +
-      ' (frases cortas en vocabulario operador para sobreimponer en cada plano)' +
+      ' (frases cortas en vocabulario operador — primeros overlays SOLO del problema, ultimo overlay con CTA WhatsApp)' +
       ' ## 3) COPY META ADS - 3 VARIANTES' +
-      ' (tono testimonial real, max 125 caracteres cada uno)' +
+      ' (tono testimonial real, max 125 caracteres cada uno, CTA WhatsApp explicito)' +
       ' ## 4) INSTRUCCIONES CAPCUT' +
-      ' (cortes rapidos, sin transiciones fancy, fuente blanca bold)' +
-      ' Max 400 palabras total.',
+      ' (cortes rapidos, sin transiciones fancy, fuente blanca bold, respetar estructura 0-3s problema / 3-7s overlay / 7-12s solucion+CTA)' +
+      ' Max 450 palabras total.',
 
     'IM': ' CAPA IM — INTENCION MEDIA.' +
       ' Este pack es IMAGEN ESTATICA o CARRUSEL para captar atencion media en el feed. NO video, NO avatar.' +
