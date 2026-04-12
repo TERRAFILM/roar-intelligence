@@ -51,6 +51,50 @@ module.exports = async function handler(req, res) {
         });
       }
 
+      if (body.action === 'debug_notes') {
+        const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+        const base = `https://${subdomain}.kommo.com/api/v4`;
+
+        const hit = async (label, url) => {
+          const started = Date.now();
+          try {
+            const r = await fetch(url, { headers: authHeaders });
+            const ms = Date.now() - started;
+            const ct = r.headers.get('content-type') || '';
+            let payload;
+            if (ct.includes('application/json')) {
+              try { payload = await r.json(); }
+              catch (je) { payload = { _parse_error: je.message }; }
+            } else {
+              const txt = await r.text();
+              payload = { _non_json: true, _text: txt.slice(0, 2000) };
+            }
+            return { label, url, ok: r.ok, status: r.status, ms, data: payload };
+          } catch (e) {
+            return { label, url, ok: false, status: 0, error: e.message };
+          }
+        };
+
+        // 1) Leads recientes
+        const leadsCall = await hit('leads_recent', `${base}/leads?limit=10&order[updated_at]=desc`);
+        const leads = (leadsCall.data && leadsCall.data._embedded && leadsCall.data._embedded.leads) || [];
+        const firstIds = leads.slice(0, 3).map(l => l.id);
+
+        // 2) Notas crudas de los primeros 3 leads
+        const notesCalls = await Promise.all(firstIds.map(id =>
+          hit(`notes_lead_${id}`, `${base}/leads/${id}/notes?limit=10`)
+        ));
+
+        return res.status(200).json({
+          ok: true,
+          subdomain: subdomain || null,
+          hasToken: Boolean(token),
+          firstLeadIds: firstIds,
+          leadsCall: leadsCall,
+          notesCalls: notesCalls
+        });
+      }
+
       if (body.action === 'analyze_mentions') {
         const days = Number(body.days || 7);
         const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
