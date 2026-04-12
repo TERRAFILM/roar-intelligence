@@ -142,66 +142,80 @@ module.exports = async function handler(req, res) {
         const days = Number(body.days || 7);
         const base = `https://${subdomain}.kommo.com/api/v4`;
         let messages = [];
-        let totalLeads = 0;
-        let totalNotas = 0;
         let totalEventos = 0;
+        let talkIds = [];
+        let totalMensajesBrutos = 0;
 
-        const extractNoteText = (n) => {
-          if (!n) return '';
-          const p = n.params || {};
-          return n.text || p.text || p.message || p.body || p.comment || p.service || '';
+        const extractMsgText = (m) => {
+          if (!m) return '';
+          if (m.content && typeof m.content === 'object') {
+            return m.content.text || m.content.message || m.content.body || '';
+          }
+          if (m.message && typeof m.message === 'object') {
+            return m.message.text || m.message.body || '';
+          }
+          return m.text || m.body || m.message || '';
         };
 
-        const extractEventText = (e) => {
-          if (!e) return '';
-          const p = e.params || {};
-          const va = e.value_after;
-          let vaText = '';
-          if (typeof va === 'string') vaText = va;
-          else if (Array.isArray(va) && va[0]) vaText = va[0].value || va[0].text || va[0].message || '';
-          else if (va && typeof va === 'object') vaText = va.value || va.text || va.message || '';
-          return vaText || p.message || p.text || p.body || '';
+        const extractTalkIdFromEvent = (ev) => {
+          if (!ev) return null;
+          const va = ev.value_after;
+          // value_after: [{message: {talk_id: X, text: "..."}}] o {message: {...}}
+          if (Array.isArray(va) && va[0]) {
+            const m = va[0].message || va[0];
+            if (m && (m.talk_id || m.id)) return m.talk_id || m.id;
+          } else if (va && typeof va === 'object') {
+            const m = va.message || va;
+            if (m && (m.talk_id || m.id)) return m.talk_id || m.id;
+          }
+          const p = ev.params || {};
+          return p.talk_id || null;
         };
 
-        // 1) Leads recientes ordenados por updated_at desc (usa fetchJson robusto)
-        let leadIds = [];
-        const leadsResp = await fetchJson(`${base}/leads?limit=50&order[updated_at]=desc`);
-        if (leadsResp.ok && leadsResp.data) {
-          const leads = (leadsResp.data._embedded && leadsResp.data._embedded.leads) || [];
-          totalLeads = leads.length;
-          leadIds = leads.map(l => l.id).filter(Boolean);
-        }
-
-        // 2) Notas por lead en paralelo (hasta 30)
-        if (leadIds.length > 0) {
-          const noteResults = await Promise.all(leadIds.slice(0, 30).map(id =>
-            fetchJson(`${base}/leads/${id}/notes?limit=50`)
-          ));
-          noteResults.forEach(r => {
-            if (!r.data) return;
-            const ns = (r.data._embedded && r.data._embedded.notes) || [];
-            totalNotas += ns.length;
-            ns.forEach(n => {
-              const t = extractNoteText(n);
-              if (typeof t === 'string' && t.trim().length > 2) messages.push(t.trim());
-            });
-          });
-        }
-
-        // 3) Eventos de mensajes entrantes — tipos multiples en paralelo
-        const evTypes = ['incoming_chat_message', 'chat_message_in', 'chat_incoming_message'];
-        const evResults = await Promise.all(evTypes.map(type =>
-          fetchJson(`${base}/events?filter[entity_type]=lead&filter[type]=${type}&limit=100`)
-        ));
-        evResults.forEach(r => {
-          if (!r.data) return;
-          const evs = (r.data._embedded && r.data._embedded.events) || [];
-          totalEventos += evs.length;
+        // 1) Eventos de mensajes entrantes — obtener talk_ids unicos
+        const evResp = await fetchJson(`${base}/events?filter[type]=incoming_chat_message&limit=100`);
+        if (evResp.ok && evResp.data) {
+          const evs = (evResp.data._embedded && evResp.data._embedded.events) || [];
+          totalEventos = evs.length;
+          const talkIdSet = new Set();
           evs.forEach(ev => {
-            const t = extractEventText(ev);
-            if (typeof t === 'string' && t.trim().length > 2) messages.push(t.trim());
+            const tid = extractTalkIdFromEvent(ev);
+            if (tid) talkIdSet.add(tid);
           });
-        });
+          talkIds = Array.from(talkIdSet);
+        }
+
+        // 2) Mensajes de cada talk en paralelo (limite 30)
+        if (talkIds.length > 0) {
+          const talkResults = await Promise.all(talkIds.slice(0, 30).map(async (tid) => {
+            // Intento primario: /talks/{id}/messages
+            const primary = await fetchJson(`${base}/talks/${tid}/messages?limit=50`);
+            if (primary.ok && primary.data) return primary;
+            // Fallback: /talks/{id}
+            const secondary = await fetchJson(`${base}/talks/${tid}`);
+            return secondary;
+          }));
+          talkResults.forEach(r => {
+            if (!r || !r.data) return;
+            const msgs = (r.data._embedded && r.data._embedded.messages)
+              || r.data.messages
+              || (Array.isArray(r.data) ? r.data : []);
+            if (msgs && msgs.length) {
+              totalMensajesBrutos += msgs.length;
+              msgs.forEach(m => {
+                const t = extractMsgText(m);
+                if (typeof t === 'string' && t.trim().length > 2) messages.push(t.trim());
+              });
+            } else {
+              // Si /talks/{id} devolvio el talk directo con un mensaje embebido
+              const singleText = extractMsgText(r.data);
+              if (singleText && singleText.length > 2) {
+                totalMensajesBrutos += 1;
+                messages.push(singleText.trim());
+              }
+            }
+          });
+        }
 
         // Deduplicar
         messages = Array.from(new Set(messages));
@@ -209,11 +223,11 @@ module.exports = async function handler(req, res) {
         return res.status(200).json({
           ok: true,
           totalMensajes: messages.length,
-          totalLeads: totalLeads,
-          totalNotas: totalNotas,
           totalEventos: totalEventos,
+          talkIdsUnicos: talkIds.length,
+          mensajesBrutos: totalMensajesBrutos,
           messages: messages.slice(0, 1000),
-          source: 'kommo_leads_notes_events_' + days + 'd'
+          source: 'kommo_talks_' + days + 'd'
         });
       }
 
