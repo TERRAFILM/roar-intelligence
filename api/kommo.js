@@ -12,6 +12,45 @@ module.exports = async function handler(req, res) {
     try {
       const body = req.body || {};
 
+      if (body.action === 'debug_kommo') {
+        const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+        const base = `https://${subdomain}.kommo.com/api/v4`;
+
+        const hit = async (label, url) => {
+          const started = Date.now();
+          try {
+            const r = await fetch(url, { headers: authHeaders });
+            const ms = Date.now() - started;
+            const ct = r.headers.get('content-type') || '';
+            let payload;
+            if (ct.includes('application/json')) {
+              try { payload = await r.json(); }
+              catch (je) { payload = { _parse_error: je.message }; }
+            } else {
+              const txt = await r.text();
+              payload = { _non_json: true, _text: txt.slice(0, 2000) };
+            }
+            return { label, url, ok: r.ok, status: r.status, ms, data: payload };
+          } catch (e) {
+            return { label, url, ok: false, status: 0, error: e.message };
+          }
+        };
+
+        const [account, chats, leads] = await Promise.all([
+          hit('account', `${base}/account`),
+          hit('chats',   `${base}/chats?limit=5`),
+          hit('leads',   `${base}/leads?limit=5`)
+        ]);
+
+        return res.status(200).json({
+          ok: true,
+          subdomain: subdomain || null,
+          hasToken: Boolean(token),
+          tokenPreview: token ? (token.slice(0,8) + '...' + token.slice(-6)) : null,
+          calls: { account, chats, leads }
+        });
+      }
+
       if (body.action === 'analyze_mentions') {
         const days = Number(body.days || 7);
         const since = Math.floor((Date.now() - days*24*60*60*1000) / 1000);
