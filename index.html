@@ -283,6 +283,14 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 </select>
 <input type="text" id="ang" placeholder="La bolsa que aguanta mojada, fria y cargada" style="margin-top:4px">
 </div>
+<div style="margin-bottom:8px">
+<label style="font-size:11px;color:#4AC34A;font-weight:bold">&#127919; Angulo Narrativo (filtrado por capa seleccionada)</label>
+<select id="angulo-narrativo" onchange="seleccionarAngulo()" style="width:100%;background:#111;color:#fff;border:1px solid #4AC34A;padding:8px;border-radius:6px;font-size:12px;margin-top:4px">
+<option value="">-- Selecciona angulo compatible con la capa --</option>
+</select>
+<div id="angulo-info" style="font-size:10px;color:#888;margin-top:4px">Cambia de capa y el selector mostrara solo los angulos compatibles.</div>
+<div id="angulo-guard-status" style="font-size:11px;margin-top:6px;display:none;padding:8px;border-radius:6px"></div>
+</div>
 <div id="contexto-activo" style="margin-bottom:12px;padding:10px;background:#1a1a1a;border:1px solid #333;border-radius:6px;font-size:11px;display:none">
   <div style="color:#4AC34A;font-weight:bold;margin-bottom:6px">⚡ INPUTS ACTIVOS ESTA SEMANA</div>
   <div id="ctx-acciones" style="color:#888;margin-bottom:3px">⬜ Acciones: sin cargar</div>
@@ -479,9 +487,12 @@ async function genCreativo(){
   const capaVal = document.getElementById('capa').value;
   const hookVal = document.getElementById('ang').value;
 
+  // Angulo narrativo — inyectado en el circuito
+  const anguloSel = window._anguloSeleccionado;
+  const anguloTxt = anguloSel ? (anguloSel.label + ' (riesgo ' + anguloSel.riesgo + ')') : 'No especificado';
   // Base comun a todas las capas
   const base = 'Eres el sistema creativo de ROAR Plasticos GDL. Bolsa 50x70 Cal.170 La que no te deja tirado.' +
-    ' Segmento: ' + segVal + ' | Capa: ' + capaVal + ' | Hook: ' + hookVal +
+    ' Segmento: ' + segVal + ' | Capa: ' + capaVal + ' | Hook: ' + hookVal + ' | ANGULO NARRATIVO: ' + anguloTxt +
     ' VOCABULARIO REAL DEL OPERADOR (usar siempre, nunca tecnicismos):' +
     ' "se truena" "se desfonda" "se cae la carne" "la jalo y se abre" "revienta al levantarla"' +
     ' "los picos la perforan" "le pongo caliente y se derrite" "ya no pongo doble bolsa" "la que no te deja tirado".' +
@@ -1121,6 +1132,23 @@ async function genAudio(){
   }
 
   async function producirConSKU(){
+  // ==== ANDROMEDA GUARD ANGULO — 3 reglas antes de producir ====
+  const _guardAngulo = (typeof andromedaGuardAngulo === 'function') ? andromedaGuardAngulo() : { bloquear:false, alertar:false, mensaje:null };
+  if(_guardAngulo.bloquear){
+    alert(_guardAngulo.mensaje);
+    const gs = document.getElementById('angulo-guard-status');
+    if(gs){ gs.style.display='block'; gs.style.background='#b71c1c'; gs.style.color='#fff'; gs.textContent=_guardAngulo.mensaje; }
+    return;
+  }
+  if(_guardAngulo.alertar){
+    const ok = confirm(_guardAngulo.mensaje + '\n\nAndromeda alerta — continuar produccion de todos modos?');
+    if(!ok) return;
+    const gs = document.getElementById('angulo-guard-status');
+    if(gs){ gs.style.display='block'; gs.style.background='#e65100'; gs.style.color='#fff'; gs.textContent=_guardAngulo.mensaje+' (continuado con confirmacion)'; }
+  }
+  // Registrar angulo como activo esta semana
+  if(typeof registrarAnguloActivo === 'function') registrarAnguloActivo();
+
   const packText = document.getElementById('creat-out') ? document.getElementById('creat-out').innerText : '';
   const skuDiv = document.getElementById('auditoria-sku');
   const sku = skuDiv ? skuDiv.textContent : '';
@@ -1478,6 +1506,12 @@ async function correrAuditoriaROAR(){
   const segVal = document.getElementById('seg') ? document.getElementById('seg').value : '';
   const capaVal = document.getElementById('capa') ? document.getElementById('capa').value : '';
   const hookVal = document.getElementById('ang') ? document.getElementById('ang').value : '';
+  // Angulo narrativo para el SKU
+  const anguloAudit = window._anguloSeleccionado;
+  const anguloIdAudit = anguloAudit ? anguloAudit.id : 'SinAngulo';
+  const anguloLabelAudit = anguloAudit ? anguloAudit.label : 'No especificado';
+  const anguloSkuMap = { perdida:'PerdidaEcon', comparativo:'CompOperativo', testimonial:'Testimonial', problema_fisico:'ProblemaFisico', imagen_profesional:'ImagenProf' };
+  const anguloSkuSeg = anguloSkuMap[anguloIdAudit] || 'SinAngulo';
 
   const p = 'Eres el auditor de creativos de ROAR Plasticos GDL. ' +
     'Analiza este pack creativo y evalua CADA criterio con APROBADO o FALLO + razon de una linea. ' +
@@ -1494,9 +1528,11 @@ async function correrAuditoriaROAR(){
     ' ✅ APROBADO — listo para produccion' +
     ' ⚠️ APROBADO CON OBSERVACIONES — puede publicarse con estos ajustes menores: [lista]' +
     ' ❌ RECHAZADO — corregir antes de producir: [lista de correcciones]' +
+    ' ANGULO NARRATIVO DE ESTE PACK: ' + anguloLabelAudit + ' (codigo SKU: ' + anguloSkuSeg + ')' +
     ' Si APROBADO o APROBADO CON OBSERVACIONES, genera el SKU en este formato exacto:' +
-    ' SKU: CAPA|WA|50x70|Hook3palabras|Segmento|Formato' +
-    ' Ejemplo: AI|WA|50x70|DobleBoIsaFrio|Carniceria|9:16' +
+    ' SKU: CAPA|WA|50x70|Hook3palabras|Segmento|Angulo|Formato' +
+    ' Ejemplo: AI|WA|50x70|DobleBoIsaFrio|Carniceria|PerdidaEcon|9:16' +
+    ' Usa ' + anguloSkuSeg + ' como segmento de angulo en el SKU generado.' +
     ' Max 300 palabras. Directo y accionable.';
 
   try {
@@ -1646,6 +1682,122 @@ async function analizarCompetencia(){
       out.textContent = 'Error: ' + e.message;
     }
   }
+
+// ============ ANGULO NARRATIVO — Cuarto Selector + Andromeda Guard ============
+const ANGULOS_NARRATIVOS = [
+  { id:'perdida',            label:'Perdida economica',     capas:['EOV','AI','IM'],   riesgo:'BAJO' },
+  { id:'comparativo',        label:'Comparativo operativo', capas:['COMP','AI'],       riesgo:'MEDIO' },
+  { id:'testimonial',        label:'Testimonial directo',   capas:['EOV','AI'],        riesgo:'BAJO' },
+  { id:'problema_fisico',    label:'Problema fisico',       capas:['EOV','AI','IM'],   riesgo:'BAJO' },
+  { id:'imagen_profesional', label:'Imagen profesional',    capas:['IM','MARCA'],      riesgo:'CRITICO' }
+];
+window._anguloSeleccionado = null;
+window._angulosSemana = window._angulosSemana || JSON.parse(localStorage.getItem('roar_angulos_semana') || '[]');
+
+function filtrarAngulosPorCapa(){
+  const capaEl = document.getElementById('capa');
+  const sel = document.getElementById('angulo-narrativo');
+  if(!capaEl || !sel) return;
+  const capa = capaEl.value;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- Selecciona angulo compatible con la capa --</option>';
+  const compatibles = ANGULOS_NARRATIVOS.filter(function(a){ return a.capas.indexOf(capa) !== -1; });
+  compatibles.forEach(function(a){
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    const icon = a.riesgo === 'CRITICO' ? '🔴' : a.riesgo === 'MEDIO' ? '🟡' : '🟢';
+    opt.textContent = icon + ' ' + a.label + ' — riesgo ' + a.riesgo;
+    sel.appendChild(opt);
+  });
+  // Conservar seleccion si aun es compatible
+  if(prev && compatibles.some(function(a){ return a.id === prev; })){
+    sel.value = prev;
+  } else {
+    window._anguloSeleccionado = null;
+  }
+  seleccionarAngulo();
+}
+
+function seleccionarAngulo(){
+  const sel = document.getElementById('angulo-narrativo');
+  const info = document.getElementById('angulo-info');
+  const gs = document.getElementById('angulo-guard-status');
+  if(gs){ gs.style.display='none'; gs.textContent=''; }
+  if(!sel || !sel.value){
+    window._anguloSeleccionado = null;
+    if(info) info.textContent = 'Cambia de capa y el selector mostrara solo los angulos compatibles.';
+    return;
+  }
+  const a = ANGULOS_NARRATIVOS.find(function(x){ return x.id === sel.value; });
+  if(!a) return;
+  window._anguloSeleccionado = { id: a.id, label: a.label, riesgo: a.riesgo };
+  const riesgoColor = a.riesgo === 'CRITICO' ? '#f44' : a.riesgo === 'MEDIO' ? '#fa0' : '#0f0';
+  if(info) info.innerHTML = '🎯 <strong style="color:' + riesgoColor + '">' + a.label + '</strong> — riesgo <strong>' + a.riesgo + '</strong> — capas validas: ' + a.capas.join(' / ');
+  // Pre-evaluar guard visualmente para que Camilo vea si va a bloquear al producir
+  const preview = andromedaGuardAngulo();
+  if(gs && (preview.bloquear || preview.alertar)){
+    gs.style.display='block';
+    gs.style.background = preview.bloquear ? '#b71c1c' : '#e65100';
+    gs.style.color = '#fff';
+    gs.textContent = (preview.bloquear ? '🚫 BLOQUEARA PRODUCCION: ' : '⚠️ ALERTARA AL PRODUCIR: ') + preview.mensaje;
+  }
+}
+
+function andromedaGuardAngulo(){
+  const ang = window._anguloSeleccionado;
+  const capaEl = document.getElementById('capa');
+  const capa = capaEl ? capaEl.value : '';
+  if(!ang){
+    return { bloquear:true, alertar:false, mensaje:'🚫 Selecciona un Angulo Narrativo antes de producir' };
+  }
+  // R1: Angulo profesional + capa EOV o AI => BLOQUEAR riesgo critico
+  if(ang.id === 'imagen_profesional' && (capa === 'EOV' || capa === 'AI')){
+    return { bloquear:true, alertar:false, mensaje:'🚫 R1 Andromeda CRITICO: Angulo "Imagen profesional" incompatible con capa ' + capa + ' — solo IM o MARCA permitidas' };
+  }
+  // R2: Angulo comparativo ya existente en el ad set (mismo capa)
+  if(ang.id === 'comparativo'){
+    const yaComp = (window._angulosSemana || []).some(function(x){ return x.id === 'comparativo' && x.capa === capa; });
+    if(yaComp){
+      return { bloquear:false, alertar:true, mensaje:'⚠️ R2 Andromeda: Ya hay un angulo Comparativo activo en el ad set ' + capa + ' esta semana' };
+    }
+  }
+  // R3: 2+ angulos distintos ya activos esta semana y este es uno nuevo
+  const idsSemana = Array.from(new Set((window._angulosSemana || []).map(function(x){ return x.id; })));
+  if(idsSemana.length >= 2 && idsSemana.indexOf(ang.id) === -1){
+    return { bloquear:false, alertar:true, mensaje:'⚠️ R3 Andromeda: Ya hay ' + idsSemana.length + ' angulos activos esta semana (' + idsSemana.join(' / ') + ') — agregar "' + ang.label + '" fragmenta el test' };
+  }
+  return { bloquear:false, alertar:false, mensaje:null };
+}
+
+function registrarAnguloActivo(){
+  const ang = window._anguloSeleccionado;
+  if(!ang) return;
+  const capaEl = document.getElementById('capa');
+  const capa = capaEl ? capaEl.value : '';
+  if(!window._angulosSemana) window._angulosSemana = [];
+  // Limpiar entradas de mas de 7 dias
+  const unaSemanaMs = 7*24*60*60*1000;
+  const ahora = Date.now();
+  window._angulosSemana = window._angulosSemana.filter(function(x){ return (ahora - new Date(x.timestamp).getTime()) < unaSemanaMs; });
+  window._angulosSemana.push({ id: ang.id, label: ang.label, capa: capa, timestamp: new Date().toISOString() });
+  try { localStorage.setItem('roar_angulos_semana', JSON.stringify(window._angulosSemana)); } catch(e){}
+}
+
+// Inicializacion — listener de capa + filtrado inicial
+(function initAnguloNarrativo(){
+  function init(){
+    const capaEl = document.getElementById('capa');
+    if(capaEl){
+      capaEl.addEventListener('change', filtrarAngulosPorCapa);
+      filtrarAngulosPorCapa();
+    }
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
 
 </script>
 </body>
