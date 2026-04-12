@@ -9,31 +9,41 @@ module.exports = async function handler(req, res) {
 
   // ============ POST /api/kommo — acciones analiticas ============
   if (req.method === 'POST') {
+    // Helper robusto: siempre lee como texto y trata de JSON.parse,
+    // porque Kommo a veces devuelve Content-Type raro pero el cuerpo SI es JSON.
+    const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const fetchJson = async (url) => {
+      try {
+        const r = await fetch(url, { headers: authHeaders });
+        const txt = await r.text();
+        let data = null;
+        if (txt && txt.length > 0) {
+          try { data = JSON.parse(txt); }
+          catch (je) { data = null; }
+        }
+        return { ok: r.ok, status: r.status, data, rawText: txt };
+      } catch (e) {
+        return { ok: false, status: 0, data: null, error: e.message };
+      }
+    };
+
     try {
       const body = req.body || {};
 
       if (body.action === 'debug_kommo') {
-        const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         const base = `https://${subdomain}.kommo.com/api/v4`;
 
         const hit = async (label, url) => {
           const started = Date.now();
-          try {
-            const r = await fetch(url, { headers: authHeaders });
-            const ms = Date.now() - started;
-            const ct = r.headers.get('content-type') || '';
-            let payload;
-            if (ct.includes('application/json')) {
-              try { payload = await r.json(); }
-              catch (je) { payload = { _parse_error: je.message }; }
-            } else {
-              const txt = await r.text();
-              payload = { _non_json: true, _text: txt.slice(0, 2000) };
-            }
-            return { label, url, ok: r.ok, status: r.status, ms, data: payload };
-          } catch (e) {
-            return { label, url, ok: false, status: 0, error: e.message };
-          }
+          const r = await fetchJson(url);
+          const ms = Date.now() - started;
+          return {
+            label, url, ok: r.ok, status: r.status, ms,
+            data: r.data,
+            _parsed: r.data !== null,
+            _rawPreview: r.data === null ? (r.rawText || '').slice(0, 500) : undefined,
+            error: r.error
+          };
         };
 
         const [account, chats, leads] = await Promise.all([
@@ -52,33 +62,25 @@ module.exports = async function handler(req, res) {
       }
 
       if (body.action === 'debug_notes') {
-        const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         const base = `https://${subdomain}.kommo.com/api/v4`;
 
         const hit = async (label, url) => {
           const started = Date.now();
-          try {
-            const r = await fetch(url, { headers: authHeaders });
-            const ms = Date.now() - started;
-            const ct = r.headers.get('content-type') || '';
-            let payload;
-            if (ct.includes('application/json')) {
-              try { payload = await r.json(); }
-              catch (je) { payload = { _parse_error: je.message }; }
-            } else {
-              const txt = await r.text();
-              payload = { _non_json: true, _text: txt.slice(0, 2000) };
-            }
-            return { label, url, ok: r.ok, status: r.status, ms, data: payload };
-          } catch (e) {
-            return { label, url, ok: false, status: 0, error: e.message };
-          }
+          const r = await fetchJson(url);
+          const ms = Date.now() - started;
+          return {
+            label, url, ok: r.ok, status: r.status, ms,
+            data: r.data,
+            _parsed: r.data !== null,
+            _rawPreview: r.data === null ? (r.rawText || '').slice(0, 500) : undefined,
+            error: r.error
+          };
         };
 
-        // 1) Leads recientes
+        // 1) Leads recientes — extraer IDs del JSON parseado
         const leadsCall = await hit('leads_recent', `${base}/leads?limit=10&order[updated_at]=desc`);
         const leads = (leadsCall.data && leadsCall.data._embedded && leadsCall.data._embedded.leads) || [];
-        const firstIds = leads.slice(0, 3).map(l => l.id);
+        const firstIds = leads.slice(0, 3).map(l => l.id).filter(Boolean);
 
         // 2) Notas crudas de los primeros 3 leads
         const notesCalls = await Promise.all(firstIds.map(id =>
@@ -90,6 +92,7 @@ module.exports = async function handler(req, res) {
           subdomain: subdomain || null,
           hasToken: Boolean(token),
           firstLeadIds: firstIds,
+          leadsCount: leads.length,
           leadsCall: leadsCall,
           notesCalls: notesCalls
         });
@@ -97,7 +100,6 @@ module.exports = async function handler(req, res) {
 
       if (body.action === 'analyze_mentions') {
         const days = Number(body.days || 7);
-        const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
         const base = `https://${subdomain}.kommo.com/api/v4`;
         let messages = [];
         let totalLeads = 0;
@@ -121,55 +123,45 @@ module.exports = async function handler(req, res) {
           return vaText || p.message || p.text || p.body || '';
         };
 
-        // 1) Leads recientes ordenados por updated_at desc
+        // 1) Leads recientes ordenados por updated_at desc (usa fetchJson robusto)
         let leadIds = [];
-        try {
-          const leadsUrl = `${base}/leads?limit=50&order[updated_at]=desc`;
-          const lr = await fetch(leadsUrl, { headers: authHeaders });
-          if (lr.ok) {
-            const ld = await lr.json();
-            const leads = (ld._embedded && ld._embedded.leads) || [];
-            totalLeads = leads.length;
-            leadIds = leads.map(l => l.id).filter(Boolean);
-          }
-        } catch (e) { /* continue */ }
+        const leadsResp = await fetchJson(`${base}/leads?limit=50&order[updated_at]=desc`);
+        if (leadsResp.ok && leadsResp.data) {
+          const leads = (leadsResp.data._embedded && leadsResp.data._embedded.leads) || [];
+          totalLeads = leads.length;
+          leadIds = leads.map(l => l.id).filter(Boolean);
+        }
 
         // 2) Notas por lead en paralelo (hasta 30)
         if (leadIds.length > 0) {
-          try {
-            const noteResults = await Promise.all(leadIds.slice(0, 30).map(id =>
-              fetch(`${base}/leads/${id}/notes?limit=50`, { headers: authHeaders })
-                .then(r => r.ok ? r.json() : { _embedded: { notes: [] } })
-                .catch(() => ({ _embedded: { notes: [] } }))
-            ));
-            noteResults.forEach(r => {
-              const ns = (r._embedded && r._embedded.notes) || [];
-              totalNotas += ns.length;
-              ns.forEach(n => {
-                const t = extractNoteText(n);
-                if (typeof t === 'string' && t.trim().length > 2) messages.push(t.trim());
-              });
-            });
-          } catch (e) { /* continue */ }
-        }
-
-        // 3) Eventos de mensajes entrantes (chat_message_in / incoming_chat_message)
-        try {
-          const evTypes = ['incoming_chat_message', 'chat_message_in', 'chat_incoming_message'];
-          const evResults = await Promise.all(evTypes.map(type =>
-            fetch(`${base}/events?filter[entity_type]=lead&filter[type]=${type}&limit=100`, { headers: authHeaders })
-              .then(r => r.ok ? r.json() : { _embedded: { events: [] } })
-              .catch(() => ({ _embedded: { events: [] } }))
+          const noteResults = await Promise.all(leadIds.slice(0, 30).map(id =>
+            fetchJson(`${base}/leads/${id}/notes?limit=50`)
           ));
-          evResults.forEach(r => {
-            const evs = (r._embedded && r._embedded.events) || [];
-            totalEventos += evs.length;
-            evs.forEach(ev => {
-              const t = extractEventText(ev);
+          noteResults.forEach(r => {
+            if (!r.data) return;
+            const ns = (r.data._embedded && r.data._embedded.notes) || [];
+            totalNotas += ns.length;
+            ns.forEach(n => {
+              const t = extractNoteText(n);
               if (typeof t === 'string' && t.trim().length > 2) messages.push(t.trim());
             });
           });
-        } catch (e) { /* continue */ }
+        }
+
+        // 3) Eventos de mensajes entrantes — tipos multiples en paralelo
+        const evTypes = ['incoming_chat_message', 'chat_message_in', 'chat_incoming_message'];
+        const evResults = await Promise.all(evTypes.map(type =>
+          fetchJson(`${base}/events?filter[entity_type]=lead&filter[type]=${type}&limit=100`)
+        ));
+        evResults.forEach(r => {
+          if (!r.data) return;
+          const evs = (r.data._embedded && r.data._embedded.events) || [];
+          totalEventos += evs.length;
+          evs.forEach(ev => {
+            const t = extractEventText(ev);
+            if (typeof t === 'string' && t.trim().length > 2) messages.push(t.trim());
+          });
+        });
 
         // Deduplicar
         messages = Array.from(new Set(messages));
