@@ -53,90 +53,91 @@ module.exports = async function handler(req, res) {
 
       if (body.action === 'analyze_mentions') {
         const days = Number(body.days || 7);
-        const since = Math.floor((Date.now() - days*24*60*60*1000) / 1000);
-        let messages = [];
-        let totalChats = 0;
-        let totalNotas = 0;
-        let source = '';
         const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-
-        const extractChatText = (m) => {
-          if (!m) return '';
-          // Kommo chats API suele entregar el texto en content.text o message.text
-          if (m.content && typeof m.content === 'object') {
-            return m.content.text || m.content.message || m.content.body || '';
-          }
-          if (m.message && typeof m.message === 'object') {
-            return m.message.text || m.message.body || '';
-          }
-          return m.text || m.body || m.message || '';
-        };
+        const base = `https://${subdomain}.kommo.com/api/v4`;
+        let messages = [];
+        let totalLeads = 0;
+        let totalNotas = 0;
+        let totalEventos = 0;
 
         const extractNoteText = (n) => {
+          if (!n) return '';
           const p = n.params || {};
-          return p.text || p.message || p.body || p.comment || p.service || '';
+          return n.text || p.text || p.message || p.body || p.comment || p.service || '';
         };
 
-        // 1) PRIMARIO — /api/v4/chats
+        const extractEventText = (e) => {
+          if (!e) return '';
+          const p = e.params || {};
+          const va = e.value_after;
+          let vaText = '';
+          if (typeof va === 'string') vaText = va;
+          else if (Array.isArray(va) && va[0]) vaText = va[0].value || va[0].text || va[0].message || '';
+          else if (va && typeof va === 'object') vaText = va.value || va.text || va.message || '';
+          return vaText || p.message || p.text || p.body || '';
+        };
+
+        // 1) Leads recientes ordenados por updated_at desc
+        let leadIds = [];
         try {
-          const chatsUrl = `https://${subdomain}.kommo.com/api/v4/chats?limit=50`;
-          const chatsRes = await fetch(chatsUrl, { headers: authHeaders });
-          if (chatsRes.ok) {
-            const cd = await chatsRes.json();
-            const chats = (cd._embedded && cd._embedded.chats) || cd.chats || [];
-            totalChats = chats.length;
-            const chatIds = chats.map(c => c.id || c.chat_id || c.uuid).filter(Boolean);
-
-            // 2) Para cada chat, jalar /chats/{id}/messages en paralelo (limite 30)
-            const msgResults = await Promise.all(chatIds.slice(0, 30).map(id =>
-              fetch(`https://${subdomain}.kommo.com/api/v4/chats/${id}/messages?limit=100`, { headers: authHeaders })
-                .then(r => r.ok ? r.json() : null)
-                .catch(() => null)
-            ));
-            msgResults.forEach(r => {
-              if (!r) return;
-              const msgs = (r._embedded && r._embedded.messages) || r.messages || [];
-              msgs.forEach(m => {
-                const t = extractChatText(m);
-                if (typeof t === 'string' && t.length > 2) messages.push(t);
-              });
-            });
-            if (messages.length > 0) source = 'kommo_chats_' + days + 'd';
-          }
-        } catch (e) { /* continue a fallback */ }
-
-        // 3) FALLBACK — leads recientes y sus notas
-        if (messages.length === 0) {
-          try {
-            const leadsUrl = `https://${subdomain}.kommo.com/api/v4/leads?limit=50&filter[updated_at][from]=${since}`;
-            const lr = await fetch(leadsUrl, { headers: authHeaders });
+          const leadsUrl = `${base}/leads?limit=50&order[updated_at]=desc`;
+          const lr = await fetch(leadsUrl, { headers: authHeaders });
+          if (lr.ok) {
             const ld = await lr.json();
             const leads = (ld._embedded && ld._embedded.leads) || [];
-            const ids = leads.slice(0, 30).map(l => l.id);
-            const results = await Promise.all(ids.map(id =>
-              fetch(`https://${subdomain}.kommo.com/api/v4/leads/${id}/notes?limit=50`, { headers: authHeaders })
+            totalLeads = leads.length;
+            leadIds = leads.map(l => l.id).filter(Boolean);
+          }
+        } catch (e) { /* continue */ }
+
+        // 2) Notas por lead en paralelo (hasta 30)
+        if (leadIds.length > 0) {
+          try {
+            const noteResults = await Promise.all(leadIds.slice(0, 30).map(id =>
+              fetch(`${base}/leads/${id}/notes?limit=50`, { headers: authHeaders })
                 .then(r => r.ok ? r.json() : { _embedded: { notes: [] } })
                 .catch(() => ({ _embedded: { notes: [] } }))
             ));
-            results.forEach(r => {
+            noteResults.forEach(r => {
               const ns = (r._embedded && r._embedded.notes) || [];
               totalNotas += ns.length;
               ns.forEach(n => {
                 const t = extractNoteText(n);
-                if (typeof t === 'string' && t.length > 2) messages.push(t);
+                if (typeof t === 'string' && t.trim().length > 2) messages.push(t.trim());
               });
             });
-            if (messages.length > 0) source = 'kommo_notes_fallback_' + days + 'd';
           } catch (e) { /* continue */ }
         }
+
+        // 3) Eventos de mensajes entrantes (chat_message_in / incoming_chat_message)
+        try {
+          const evTypes = ['incoming_chat_message', 'chat_message_in', 'chat_incoming_message'];
+          const evResults = await Promise.all(evTypes.map(type =>
+            fetch(`${base}/events?filter[entity_type]=lead&filter[type]=${type}&limit=100`, { headers: authHeaders })
+              .then(r => r.ok ? r.json() : { _embedded: { events: [] } })
+              .catch(() => ({ _embedded: { events: [] } }))
+          ));
+          evResults.forEach(r => {
+            const evs = (r._embedded && r._embedded.events) || [];
+            totalEventos += evs.length;
+            evs.forEach(ev => {
+              const t = extractEventText(ev);
+              if (typeof t === 'string' && t.trim().length > 2) messages.push(t.trim());
+            });
+          });
+        } catch (e) { /* continue */ }
+
+        // Deduplicar
+        messages = Array.from(new Set(messages));
 
         return res.status(200).json({
           ok: true,
           totalMensajes: messages.length,
-          totalChats: totalChats,
+          totalLeads: totalLeads,
           totalNotas: totalNotas,
+          totalEventos: totalEventos,
           messages: messages.slice(0, 1000),
-          source: source || 'kommo_empty_' + days + 'd'
+          source: 'kommo_leads_notes_events_' + days + 'd'
         });
       }
 
