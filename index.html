@@ -132,6 +132,8 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <div><label>&#128994; Picos perforan</label><div class="stepper"><button type="button" class="st-m" onclick="stepMencion('k-p6',-1)">&minus;</button><input type="number" inputmode="numeric" id="k-p6" value="0"><button type="button" class="st-p" onclick="stepMencion('k-p6',1)">+</button></div></div>
 <div><label>&#128994; Solo precio</label><div class="stepper"><button type="button" class="st-m" onclick="stepMencion('k-p7',-1)">&minus;</button><input type="number" inputmode="numeric" id="k-p7" value="0"><button type="button" class="st-p" onclick="stepMencion('k-p7',1)">+</button></div></div>
 </div>
+<button type="button" class="btn bp" id="analizar-menc-btn" onclick="analizarMencionesKommo()" style="width:100%;margin-top:10px;font-size:12px;background:#4AC34A">&#128269; Analizar menciones (Kommo ultimos 7 dias)</button>
+<div id="analizar-menc-status" style="font-size:11px;color:#888;margin-top:4px;text-align:center"></div>
 <button type="button" class="btn bs" onclick="limpiarSemanaWA()" style="width:100%;margin-top:8px;margin-bottom:8px;font-size:11px">&#128465;&#65039; Limpiar semana (resetear menciones a 0)</button>
 <textarea id="k-extra" rows="2" placeholder="Observaciones Paty..."></textarea>
 </div>
@@ -817,6 +819,92 @@ async function genAudio(){
     el.value = next;
     guardarMencionesWA();
     persistMencionesWA();
+  }
+
+  // Analiza conversaciones de Kommo y llena contadores automaticamente
+  async function analizarMencionesKommo(){
+    const btn = document.getElementById('analizar-menc-btn');
+    const status = document.getElementById('analizar-menc-status');
+    if(!btn) return;
+    btn.disabled = true;
+    btn.textContent = '⏳ Leyendo conversaciones de Kommo...';
+    if(status) status.textContent = '';
+
+    // Normalizador: lowercase + sin acentos
+    const norm = function(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); };
+
+    // Palabras clave por categoria (ya normalizadas — sin acentos)
+    const KW = {
+      'k-p1': ['truena','trueno','trono','rompio','se rompe','se truena','se rompio'],
+      'k-p2': ['doble bolsa','dos bolsas','doblar bolsa','doble '],
+      'k-p3': ['peso','kilos','se cae','desfonda','se desfonda','no soporta','no aguanta'],
+      'k-p4': ['frio','congelador','congela','hielo'],
+      'k-p5': ['caliente','calor','revienta','frijoles','caldo','caldos'],
+      'k-p6': ['picos','camaron','perfora','perforan','agujera'],
+      'k-p7': ['precio','cuanto','costo','barato','cuesta','precios']
+    };
+
+    try {
+      const r = await fetch('/api/kommo', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'analyze_mentions', days: 7 })
+      });
+      const d = await r.json();
+      if(d.error) throw new Error(d.error);
+
+      const messages = d.messages || [];
+      const totalNotas = d.totalNotas || 0;
+
+      if(messages.length === 0){
+        if(status) status.innerHTML = '<span style="color:#fa0">Sin mensajes de texto en Kommo los ultimos 7 dias (' + totalNotas + ' notas revisadas)</span>';
+        btn.disabled = false;
+        btn.innerHTML = '🔍 Analizar menciones (Kommo ultimos 7 dias)';
+        return;
+      }
+
+      // Contar: cada mensaje suma 1 a cada categoria que matchee
+      const counts = {'k-p1':0,'k-p2':0,'k-p3':0,'k-p4':0,'k-p5':0,'k-p6':0,'k-p7':0};
+      messages.forEach(function(m){
+        const txt = norm(m);
+        Object.keys(KW).forEach(function(id){
+          if(KW[id].some(function(kw){ return txt.indexOf(norm(kw)) !== -1; })){
+            counts[id] += 1;
+          }
+        });
+      });
+
+      // Aplicar al UI reemplazando valores detectados
+      Object.keys(counts).forEach(function(id){
+        const el = document.getElementById(id);
+        if(el) el.value = counts[id];
+      });
+      guardarMencionesWA();
+      persistMencionesWA();
+
+      const totalDetect = Object.keys(counts).reduce(function(a,k){ return a + counts[k]; }, 0);
+      const topCats = Object.keys(counts)
+        .filter(function(k){ return counts[k] > 0; })
+        .sort(function(a,b){ return counts[b] - counts[a]; })
+        .slice(0,3);
+      const catLabels = {'k-p1':'Se truena','k-p2':'Doble bolsa','k-p3':'No soporta peso','k-p4':'Frio','k-p5':'Calor','k-p6':'Picos','k-p7':'Precio'};
+      const topTxt = topCats.map(function(k){ return catLabels[k] + ':' + counts[k]; }).join(' · ') || 'Sin menciones detectadas';
+
+      if(status) status.innerHTML = '<span style="color:#4AC34A">✅ ' + messages.length + ' conversaciones analizadas · ' + totalDetect + ' menciones detectadas</span><br><span style="color:#888">' + topTxt + '</span>';
+
+      // Banner flotante
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;top:60px;right:20px;background:#4AC34A;color:#fff;padding:14px 20px;border-radius:8px;font-size:12px;font-weight:bold;z-index:9999;max-width:340px;box-shadow:0 4px 12px rgba(0,0,0,0.4)';
+      banner.innerHTML = '🔍 ANALISIS KOMMO COMPLETO<br>' +
+        '<span style="font-size:11px;font-weight:normal">' + messages.length + ' mensajes leidos · ' + totalDetect + ' menciones</span><br>' +
+        '<span style="font-size:10px;font-weight:normal;opacity:0.9">Top: ' + topTxt + '</span>';
+      document.body.appendChild(banner);
+      setTimeout(function(){ banner.remove(); }, 6000);
+    } catch(e){
+      if(status) status.innerHTML = '<span style="color:#f44">❌ Error: ' + e.message + '</span>';
+    }
+    btn.disabled = false;
+    btn.innerHTML = '🔍 Analizar menciones (Kommo ultimos 7 dias)';
   }
 
   function limpiarSemanaWA(){
