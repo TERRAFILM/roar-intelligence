@@ -129,7 +129,10 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <button class="btn bp" onclick="runIntel()">&#129504; Correr Intelligence V2</button>
 <div class="card" style="margin-top:16px"><div class="ct">ANALISIS INTELLIGENCE</div><div class="out" id="intel-out">Ingresa datos y presiona Correr Intelligence V2...</div>
 <button class="btn bs" id="save-bitacora-btn" onclick="guardarEnBitacora()" style="margin-top:8px;width:100%">📓 Guardar análisis en Bitácora</button>
-<div id="save-bitacora-status" style="font-size:11px;color:#888;margin-top:4px"></div></div>
+<div id="save-bitacora-status" style="font-size:11px;color:#888;margin-top:4px"></div>
+<button class="btn bp" id="combo-ganadora-btn" onclick="generarComboGanadora()" style="margin-top:12px;width:100%;display:none;background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;font-weight:bold">&#127942; Generar combinacion ganadora (Segmento + Capa + Hook + Angulo)</button>
+<div id="combo-ganadora-status" style="font-size:11px;color:#888;margin-top:6px"></div>
+<div id="combo-ganadora-resumen" style="display:none;margin-top:8px;padding:10px;background:#1a1a1a;border:1px solid #FFD700;border-radius:6px;font-size:11px"></div></div>
 </div>
 
 <div id="tab-creditos" class="tab">
@@ -368,6 +371,9 @@ Genera: 1)DIAGNOSTICO DUAL 2)LOOPS TRAMPA 3)SCORECARD CAPAS 4)ACCIONES(pausar/es
     const r=await claude(p);
     out.textContent=r;
     window._lastAnalysis = r;
+    // Habilitar boton de combinacion ganadora — Intelligence → Creativos
+    const comboBtn = document.getElementById('combo-ganadora-btn');
+    if(comboBtn) comboBtn.style.display = 'block';
     // Activar panel Auditoria ROAR
     const audPanel = document.getElementById('auditoria-panel');
     if(audPanel){ audPanel.style.display='block'; ['chk-andromeda','chk-entorno','chk-problema','chk-vocabulario','chk-segmento','chk-estructura','chk-cta'].forEach(function(id){ const el=document.getElementById(id); if(el){ el.style.color='#888'; el.textContent=el.textContent.replace('✅','⬜').replace('❌','⬜'); } }); const skuDiv=document.getElementById('auditoria-sku'); if(skuDiv) skuDiv.style.display='none'; const audOut=document.getElementById('auditoria-out'); if(audOut) audOut.style.display='none'; }
@@ -1744,6 +1750,137 @@ async function analizarCompetencia(){
       out.textContent = 'Error: ' + e.message;
     }
   }
+
+// ============ PUENTE INTELLIGENCE -> CREATIVOS — Combinacion Ganadora ============
+async function generarComboGanadora(){
+  const btn = document.getElementById('combo-ganadora-btn');
+  const status = document.getElementById('combo-ganadora-status');
+  const resumen = document.getElementById('combo-ganadora-resumen');
+  if(!window._lastAnalysis){
+    status.textContent = 'Corre Intelligence V2 primero.';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Analizando combinacion ganadora...';
+  status.textContent = 'Pidiendo a Claude que consolide Meta + Kommo + menciones + acciones...';
+
+  // Consolidar todo el circuito de datos
+  const analisis = (window._lastAnalysis || '').substring(0, 900);
+  const metaData = (document.getElementById('meta-data') ? document.getElementById('meta-data').value : '').substring(0, 400);
+  const zombies = document.getElementById('k-zom') ? document.getElementById('k-zom').value : '';
+  const reales = document.getElementById('k-rea') ? document.getElementById('k-rea').value : '';
+  const bolsa = document.getElementById('k-bol') ? document.getElementById('k-bol').value : '';
+  const comp = document.getElementById('k-com') ? document.getElementById('k-com').value : '';
+  const qr = document.getElementById('k-qr') ? document.getElementById('k-qr').value : '';
+  const menciones = window._compMenciones || '';
+  const compAnalisis = (window._compAnalisis || '').substring(0, 300);
+  const accionesAprobadas = (window._accionesAprobadas || []).map(function(a){ return a.titulo + ': ' + a.detalle; }).join(' | ');
+
+  const p = 'Eres el estratega creativo de ROAR Plasticos GDL. Con base en los datos de Intelligence V2 de esta semana, recomienda la COMBINACION GANADORA para producir el siguiente pack creativo.' +
+    '\n\nANALISIS INTELLIGENCE:\n' + analisis +
+    '\n\nMETA ADS:\n' + metaData +
+    '\n\nKOMMO KPIs: Reales=' + reales + '% Zombies=' + zombies + '% PreguntanBolsa=' + bolsa + '% Comparadores=' + comp + '% QualityRating=' + qr +
+    '\n\nMENCIONES PROBLEMA WA: ' + menciones +
+    (compAnalisis ? '\n\nCOMPETITIVA: ' + compAnalisis : '') +
+    (accionesAprobadas ? '\n\nACCIONES APROBADAS: ' + accionesAprobadas : '') +
+    '\n\nOPCIONES VALIDAS (elige exactamente UNA de cada categoria):' +
+    '\n- SEGMENTO: carniceria | mariscos | lavanderia | granel | industrial' +
+    '\n- CAPA: AI | EOV | IM | MARCA | COMP' +
+    '\n- ANGULO (con sus capas compatibles):' +
+    '\n    perdida -> EOV/AI/IM (riesgo BAJO)' +
+    '\n    comparativo -> COMP/AI (riesgo MEDIO)' +
+    '\n    testimonial -> EOV/AI (riesgo BAJO)' +
+    '\n    problema_fisico -> EOV/AI/IM (riesgo BAJO)' +
+    '\n    imagen_profesional -> IM/MARCA (riesgo CRITICO)' +
+    '\nREGLAS DE DECISION OBLIGATORIAS:' +
+    '\n- El angulo elegido DEBE ser compatible con la capa elegida (ver lista).' +
+    '\n- El segmento debe alinearse con la mencion WA mas alta y con los loops trampa detectados.' +
+    '\n- Si %reales < 20% o zombies > 50%: prioriza EOV con angulo problema_fisico o testimonial (limpiar senal).' +
+    '\n- Si el Intelligence detecta loop trampa en capa COMP o comparador dominante: elige COMP con angulo comparativo.' +
+    '\n- Si QR=VERDE y reales > 25%: puedes escalar MARCA con imagen_profesional.' +
+    '\n- Si la mencion WA dominante es "se truena" o "doble bolsa" o "picos perforan": angulo problema_fisico.' +
+    '\n- El hook es una frase de 8 a 15 palabras en vocabulario operador real basado en la mencion WA dominante y los loops trampa.' +
+    '\nRESPONDE EXACTAMENTE EN ESTE FORMATO JSON (sin prefacio, sin ``` ni texto adicional):' +
+    '\n{"segmento":"carniceria","capa":"EOV","angulo":"problema_fisico","hook":"frase operador 8-15 palabras","razon":"justificacion breve basada en los datos"}';
+
+  try {
+    const r = await claude(p);
+    // Extraer JSON
+    const match = r.match(/\{[\s\S]*?\}/);
+    if(!match) throw new Error('No se pudo extraer JSON de la respuesta de Claude');
+    let combo;
+    try { combo = JSON.parse(match[0]); }
+    catch(je){ throw new Error('JSON malformado: ' + je.message); }
+    if(!combo.segmento || !combo.capa || !combo.angulo || !combo.hook){
+      throw new Error('Respuesta incompleta — faltan campos en el JSON');
+    }
+
+    // Navegar a Creativos usando tab() nativa
+    const btnCreativos = document.querySelector('.nb[onclick*="creativos"]');
+    if(btnCreativos) tab('creativos', btnCreativos);
+
+    // Pre-cargar Segmento
+    const segEl = document.getElementById('seg');
+    if(segEl && combo.segmento){
+      for(let i=0;i<segEl.options.length;i++){
+        if(segEl.options[i].value.toLowerCase() === combo.segmento.toLowerCase()){
+          segEl.selectedIndex = i; break;
+        }
+      }
+    }
+    // Pre-cargar Capa (dispara filtrado de angulos)
+    const capaEl = document.getElementById('capa');
+    if(capaEl && combo.capa){
+      for(let i=0;i<capaEl.options.length;i++){
+        if(capaEl.options[i].value.toUpperCase() === combo.capa.toUpperCase()){
+          capaEl.selectedIndex = i; break;
+        }
+      }
+      capaEl.dispatchEvent(new Event('change'));
+    }
+    // Pre-cargar Hook
+    const hookEl = document.getElementById('ang');
+    if(hookEl && combo.hook){ hookEl.value = combo.hook; }
+
+    // Pre-cargar Angulo narrativo (despues de que el filtrado corrio)
+    setTimeout(function(){
+      const anguloSel = document.getElementById('angulo-narrativo');
+      if(anguloSel && combo.angulo){
+        let encontrado = false;
+        for(let i=0;i<anguloSel.options.length;i++){
+          if(anguloSel.options[i].value === combo.angulo){
+            anguloSel.selectedIndex = i; encontrado = true; break;
+          }
+        }
+        if(encontrado && typeof seleccionarAngulo === 'function') seleccionarAngulo();
+      }
+    }, 80);
+
+    // Mostrar resumen en la tarjeta Intelligence
+    if(resumen){
+      resumen.style.display = 'block';
+      resumen.innerHTML = '<div style="color:#FFD700;font-weight:bold;margin-bottom:6px">&#127942; COMBINACION GANADORA DE LA SEMANA</div>' +
+        '<div style="color:#fff;font-family:monospace;margin-bottom:4px">' + combo.capa + ' &middot; ' + combo.segmento + ' &middot; ' + combo.angulo + '</div>' +
+        '<div style="color:#aaa;margin-bottom:4px"><strong>Hook:</strong> ' + combo.hook + '</div>' +
+        '<div style="color:#888;font-size:10px"><strong>Razon:</strong> ' + (combo.razon || '') + '</div>';
+    }
+
+    // Banner flotante
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:60px;right:20px;background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;padding:14px 20px;border-radius:8px;font-size:12px;font-weight:bold;z-index:9999;max-width:340px;box-shadow:0 4px 16px rgba(0,0,0,0.5)';
+    banner.innerHTML = '&#127942; COMBINACION GANADORA PRE-CARGADA<br>' +
+      '<span style="font-family:monospace;font-size:11px">' + combo.capa + ' / ' + combo.segmento + ' / ' + combo.angulo + '</span><br>' +
+      '<span style="font-size:10px;font-weight:normal">' + (combo.razon || '').substring(0,140) + '</span>';
+    document.body.appendChild(banner);
+    setTimeout(function(){ banner.remove(); }, 8000);
+
+    status.textContent = 'Pre-cargado en Creativos: ' + combo.capa + ' / ' + combo.segmento + ' / ' + combo.angulo;
+  } catch(e){
+    status.textContent = 'Error: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.innerHTML = '&#127942; Generar combinacion ganadora (Segmento + Capa + Hook + Angulo)';
+}
 
 // ============ ANGULO NARRATIVO — Cuarto Selector + Andromeda Guard ============
 const ANGULOS_NARRATIVOS = [
