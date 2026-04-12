@@ -577,14 +577,21 @@ async function genCreativo(){
       ' Este pack es contenido de MARCA/BRAND para construir autoridad y reconocimiento. NO es performance directo.' +
       ' CONCEPTO: posicionar ROAR como el especialista en bolsas para negocios de alimentos en Mexico.' +
       ' TONO: profesional pero cercano, autoridad tecnica sin tecnicismos, orgullo de marca mexicana.' +
+      ' MARCA es brand awareness — el fondo neutro o iluminacion de estudio es intencional y correcto.' +
+      ' Debe mencionar siempre el tipo de negocio al que sirve ROAR (carniceria, marisqueria, negocio de alimentos).' +
       ' Genera PACK COMPLETO:' +
       ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
-      ' (prompt: producto hero shot, bolsa protagonista con iluminacion premium, entorno profesional, cero carne visible)' +
-      ' ## 2) COPY BRAND - 3 VARIANTES' +
-      ' (brand promise / autoridad tecnica / origen mexicano, max 150 caracteres cada uno)' +
-      ' ## 3) HASHTAGS Y CONTEXTO' +
+      ' (prompt: producto hero shot, bolsa ROAR protagonista con iluminacion premium, fondo neutro aceptable, composicion vertical)' +
+      ' ## 2) PROMPT IMAGEN ELEVENLABS 1:1' +
+      ' (misma escena adaptada a formato cuadrado para feed)' +
+      ' ## 3) TEXTO OVERLAY PARA DISENO' +
+      ' (HEADLINE brand promise + SUBHEAD que mencione el giro al que sirve ROAR: carniceria/marisqueria/negocios de alimentos + CTA WhatsApp literal "Mandame WhatsApp" o "Escribeme al WhatsApp" — los 3 elementos son obligatorios, para sobreimponer en Canva)' +
+      ' ## 4) COPY META ADS - 3 VARIANTES' +
+      ' (brand promise / autoridad tecnica / origen mexicano, cada variante debe incluir el CTA WhatsApp literal "Mandame WhatsApp" o "Escribeme al WhatsApp" y mencionar el tipo de negocio carniceria/marisqueria/negocio de alimentos, max 150 caracteres cada uno)' +
+      ' ## 5) HASHTAGS Y CONTEXTO' +
       ' (hashtags relevantes, momento de publicacion sugerido, plataforma ideal)' +
-      ' Max 300 palabras total.',
+      ' REGLA CRITICA MARCA: CTA WhatsApp obligatorio tanto en TEXTO OVERLAY como en las 3 variantes de COPY META ADS. NUNCA numero de telefono.' +
+      ' Max 400 palabras total.',
 
     'COMP': ' CAPA COMP — COMPARATIVO.' +
       ' Este pack es contenido COMPARATIVO: ROAR vs competencia generica / vs doble bolsa / vs material reciclado.' +
@@ -1541,12 +1548,20 @@ async function correrAuditoriaROAR(){
   }
 
   if(esImagen){
-    criterio1 = ' 1) ANDROMEDA (imagen estatica ' + capaVal + '): Busca en la SECCION "PROMPT IMAGEN ELEVENLABS 9:16" y "PROMPT IMAGEN ELEVENLABS 1:1". APROBADO si el prompt de imagen especifica que la bolsa ROAR es protagonista visual (palabras clave: bolsa protagonista, bolsa en primer plano, bolsa hero shot, bolsa close-up, bolsa centrada). Puede haber carne/marisco visible como CONTEXTO del negocio — eso NO es fallo. FALLO solo si el prompt describe la carne como foco principal o no menciona explicitamente que la bolsa sea protagonista.';
-    criterio2 = ' 2) ENTORNO (imagen estatica): Busca en la SECCION "PROMPT IMAGEN" si describe contexto de negocio — mostrador, bascula, ambiente de carniceria/marisqueria, cajas, acero inoxidable, operador trabajando. FALLO si el prompt describe fondo neutro, estudio aislado, o no menciona contexto de negocio.';
-    criterio3 = ' 3) PROBLEMA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" y en "COPY META ADS - 3 VARIANTES". APROBADO si el headline, subhead u overlay menciona el PROBLEMA (se truena/desfonda/revienta/perforan/se rompe/doble bolsa/pierdo producto) ANTES que la solucion ROAR. NO busques el problema en el prompt de imagen — el problema vive en el overlay y el copy. FALLO solo si NI el overlay NI el copy mencionan el dolor del operador.';
+    const esMarca = (capaVal === 'MARCA');
+    criterio1 = esMarca
+      ? ' 1) ANDROMEDA (MARCA — brand awareness): Busca en la SECCION "PROMPT IMAGEN ELEVENLABS 9:16" y "PROMPT IMAGEN ELEVENLABS 1:1". APROBADO si el prompt especifica que la bolsa ROAR es protagonista visual (bolsa hero shot, bolsa en primer plano, bolsa centrada, iluminacion premium sobre la bolsa). En MARCA el fondo neutro, estudio o iluminacion aislada son INTENCIONALES y correctos — NO requiere carne ni marisco ni contexto de negocio en la imagen. FALLO solo si el prompt no menciona explicitamente que la bolsa sea protagonista o si describe otro objeto como foco principal.'
+      : ' 1) ANDROMEDA (imagen estatica ' + capaVal + '): Busca en la SECCION "PROMPT IMAGEN ELEVENLABS 9:16" y "PROMPT IMAGEN ELEVENLABS 1:1". APROBADO si el prompt de imagen especifica que la bolsa ROAR es protagonista visual (palabras clave: bolsa protagonista, bolsa en primer plano, bolsa hero shot, bolsa close-up, bolsa centrada). Puede haber carne/marisco visible como CONTEXTO del negocio — eso NO es fallo. FALLO solo si el prompt describe la carne como foco principal o no menciona explicitamente que la bolsa sea protagonista.';
+    criterio2 = esMarca
+      ? ' 2) ENTORNO (MARCA — brand awareness): En MARCA el fondo neutro y el estudio son intencionales. APROBADO si el prompt describe iluminacion premium, fondo neutro profesional, estudio, acabado editorial o cualquier entorno coherente con branding. FALLO solo si el prompt es caotico o sin criterio visual.'
+      : ' 2) ENTORNO (imagen estatica): Busca en la SECCION "PROMPT IMAGEN" si describe contexto de negocio — mostrador, bascula, ambiente de carniceria/marisqueria, cajas, acero inoxidable, operador trabajando. FALLO si el prompt describe fondo neutro, estudio aislado, o no menciona contexto de negocio.';
+    criterio3 = ' 3) PROBLEMA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" y en "COPY META ADS - 3 VARIANTES". APROBADO si el headline, subhead u overlay menciona el PROBLEMA (se truena/desfonda/revienta/perforan/se rompe/doble bolsa/pierdo producto) ANTES que la solucion ROAR. NO busques el problema en el prompt de imagen — el problema vive en el overlay y el copy. FALLO solo si NI el overlay NI el copy mencionan el dolor del operador.' +
+      (esMarca ? ' En MARCA este criterio es flexible: APROBADO tambien si el overlay o copy expresan la promesa de marca como contraste al dolor del mercado (ej "la que no te deja tirado", "la que si aguanta"), aunque no nombre el problema literalmente.' : '');
     criterio4 = ' 4) VOCABULARIO (imagen estatica): Evalua SOLO la SECCION "TEXTO OVERLAY PARA DISENO" y la SECCION "COPY META ADS - 3 VARIANTES". NO evalues el prompt de imagen — el prompt es instruccion tecnica, no copy para el usuario. APROBADO si el texto overlay y/o el copy Meta Ads usan lenguaje operador real (se truena, se desfonda, revienta, los picos perforan, ya no pongo doble bolsa, aguanta, no te deja tirado). FALLO solo si el overlay y copy usan tecnicismos o lenguaje corporativo.';
-    criterio5 = ' 5) SEGMENTO (imagen estatica): Busca en cualquier seccion (prompt/overlay/copy) si menciona el giro especifico (carniceria/marisqueria/polleria/etc). APROBADO tambien si el contexto del pack menciona carne, carnicero, marisco, pescaderia, pollo, pollero, res, camaron, etc — aunque no diga la palabra exacta del giro.';
-    criterio6 = ' 6) ESTRUCTURA (imagen estatica): Verifica en la SECCION "TEXTO OVERLAY PARA DISENO" que existan los 3 elementos: HEADLINE (titular grande con el problema), SUBHEAD (linea de soporte o solucion) y CTA (llamada a WhatsApp). APROBADO si los 3 estan presentes en el overlay. FALLO solo si falta headline, subhead o CTA en la seccion overlay. NO aplican timecodes de video.';
+    criterio5 = esMarca
+      ? ' 5) SEGMENTO (MARCA): Busca en TEXTO OVERLAY, COPY META ADS o subhead si menciona el tipo de negocio al que sirve ROAR (carniceria, marisqueria, negocio de alimentos, carne, marisco, pollo, camaron, operador, carnicero, marisquero). APROBADO aunque el giro no sea el foco principal del mensaje — basta con que el copy lo mencione como contexto de a quien le habla la marca. FALLO solo si NINGUNA seccion del pack menciona ningun tipo de negocio ni giro.'
+      : ' 5) SEGMENTO (imagen estatica): Busca en cualquier seccion (prompt/overlay/copy) si menciona el giro especifico (carniceria/marisqueria/polleria/etc). APROBADO tambien si el contexto del pack menciona carne, carnicero, marisco, pescaderia, pollo, pollero, res, camaron, etc — aunque no diga la palabra exacta del giro.';
+    criterio6 = ' 6) ESTRUCTURA (imagen estatica): Verifica en la SECCION "TEXTO OVERLAY PARA DISENO" que existan los 3 elementos: HEADLINE (titular grande' + (esMarca ? ' con la brand promise o autoridad' : ' con el problema') + '), SUBHEAD (linea de soporte' + (esMarca ? ' que menciona el giro al que sirve ROAR' : ' o solucion') + ') y CTA (llamada a WhatsApp). APROBADO si los 3 estan presentes en el overlay. FALLO solo si falta headline, subhead o CTA en la seccion overlay. NO aplican timecodes de video.';
     criterio7 = ' 7) CTA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" o en "COPY META ADS - 3 VARIANTES" una llamada a accion a WhatsApp (literal "Mandame WhatsApp" o "Escribeme al WhatsApp" o "WhatsApp"). APROBADO si el CTA WhatsApp aparece en overlay o copy. FALLO solo si no hay CTA WhatsApp en ninguna de esas dos secciones, o si el CTA es solo un numero de telefono.';
   }
 
