@@ -1541,20 +1541,20 @@ async function correrAuditoriaROAR(){
   }
 
   if(esImagen){
-    criterio1 = ' 1) ANDROMEDA (imagen estatica ' + capaVal + '): La bolsa ROAR es el protagonista visual de la imagen — NO la carne/marisco. FALLO si la carne/marisco domina la composicion visual o si la bolsa esta en segundo plano. En imagen estatica no hay timecodes — evalua la composicion completa.';
-    criterio2 = ' 2) ENTORNO (imagen estatica): Se ve contexto de negocio en la imagen — mostrador, bascula, ambiente de carniceria/marisqueria, cajas, acero inoxidable, operador trabajando. FALLO si la bolsa esta aislada sobre fondo neutro o estudio sin contexto.';
-    criterio3 = ' 3) PROBLEMA (imagen estatica): El copy, headline u overlay de la imagen menciona el PROBLEMA (se truena/desfonda/revienta/perforan/se rompe) ANTES que la solucion ROAR. FALLO si el copy solo presenta la solucion sin nombrar el dolor del operador.';
-    criterio4 = ' 4) VOCABULARIO (imagen estatica): En imagen estatica NO hay audio — evalua SOLO el copy escrito y el texto overlay de la imagen. APROBADO si el copy y overlay usan lenguaje operador real (se truena, se desfonda, revienta, los picos perforan, ya no pongo doble bolsa). FALLO si usa tecnicismos o lenguaje corporativo.';
-    criterio5 = ' 5) SEGMENTO (imagen estatica): Menciona el giro especifico (carniceria/marisqueria/polleria/etc). APROBADO tambien si el contexto del pack menciona carne, carnicero, marisco, pescaderia, pollo, pollero, res, camaron, etc — aunque no diga la palabra exacta del giro.';
-    criterio6 = ' 6) ESTRUCTURA (imagen estatica): La composicion tiene jerarquia visual correcta en este orden: (1) BOLSA protagonista visual, (2) PROBLEMA expresado en headline u overlay, (3) CTA WhatsApp al cierre. En imagen estatica NO aplican timecodes de video — evalua jerarquia visual. FALLO si la carne domina, si no hay jerarquia bolsa -> problema -> CTA, o si el CTA no es legible.';
-    criterio7 = ' 7) CTA (imagen estatica): Hay llamada de accion a WhatsApp en el copy o en el overlay de la imagen (literal "Mandame WhatsApp" o "Escribeme al WhatsApp"). FALLO si no hay CTA, si el CTA es solo un numero de telefono, o si no se lee claramente.';
+    criterio1 = ' 1) ANDROMEDA (imagen estatica ' + capaVal + '): Busca en la SECCION "PROMPT IMAGEN ELEVENLABS 9:16" y "PROMPT IMAGEN ELEVENLABS 1:1". APROBADO si el prompt de imagen especifica que la bolsa ROAR es protagonista visual (palabras clave: bolsa protagonista, bolsa en primer plano, bolsa hero shot, bolsa close-up, bolsa centrada). Puede haber carne/marisco visible como CONTEXTO del negocio — eso NO es fallo. FALLO solo si el prompt describe la carne como foco principal o no menciona explicitamente que la bolsa sea protagonista.';
+    criterio2 = ' 2) ENTORNO (imagen estatica): Busca en la SECCION "PROMPT IMAGEN" si describe contexto de negocio — mostrador, bascula, ambiente de carniceria/marisqueria, cajas, acero inoxidable, operador trabajando. FALLO si el prompt describe fondo neutro, estudio aislado, o no menciona contexto de negocio.';
+    criterio3 = ' 3) PROBLEMA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" y en "COPY META ADS - 3 VARIANTES". APROBADO si el headline, subhead u overlay menciona el PROBLEMA (se truena/desfonda/revienta/perforan/se rompe/doble bolsa/pierdo producto) ANTES que la solucion ROAR. NO busques el problema en el prompt de imagen — el problema vive en el overlay y el copy. FALLO solo si NI el overlay NI el copy mencionan el dolor del operador.';
+    criterio4 = ' 4) VOCABULARIO (imagen estatica): Evalua SOLO la SECCION "TEXTO OVERLAY PARA DISENO" y la SECCION "COPY META ADS - 3 VARIANTES". NO evalues el prompt de imagen — el prompt es instruccion tecnica, no copy para el usuario. APROBADO si el texto overlay y/o el copy Meta Ads usan lenguaje operador real (se truena, se desfonda, revienta, los picos perforan, ya no pongo doble bolsa, aguanta, no te deja tirado). FALLO solo si el overlay y copy usan tecnicismos o lenguaje corporativo.';
+    criterio5 = ' 5) SEGMENTO (imagen estatica): Busca en cualquier seccion (prompt/overlay/copy) si menciona el giro especifico (carniceria/marisqueria/polleria/etc). APROBADO tambien si el contexto del pack menciona carne, carnicero, marisco, pescaderia, pollo, pollero, res, camaron, etc — aunque no diga la palabra exacta del giro.';
+    criterio6 = ' 6) ESTRUCTURA (imagen estatica): Verifica en la SECCION "TEXTO OVERLAY PARA DISENO" que existan los 3 elementos: HEADLINE (titular grande con el problema), SUBHEAD (linea de soporte o solucion) y CTA (llamada a WhatsApp). APROBADO si los 3 estan presentes en el overlay. FALLO solo si falta headline, subhead o CTA en la seccion overlay. NO aplican timecodes de video.';
+    criterio7 = ' 7) CTA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" o en "COPY META ADS - 3 VARIANTES" una llamada a accion a WhatsApp (literal "Mandame WhatsApp" o "Escribeme al WhatsApp" o "WhatsApp"). APROBADO si el CTA WhatsApp aparece en overlay o copy. FALLO solo si no hay CTA WhatsApp en ninguna de esas dos secciones, o si el CTA es solo un numero de telefono.';
   }
 
   const p = 'Eres el auditor de creativos de ROAR Plasticos GDL. ' +
     'Analiza este pack creativo y evalua CADA criterio con APROBADO o FALLO + razon de una linea. ' +
     'CAPA DEL PACK: ' + capaVal + ' — TIPO DE CREATIVO: ' + tipoAudit + '. ' +
     (esEOV ? 'Aplicar reglas especiales EOV en criterios 1 y 6. ' : '') +
-    (esImagen ? 'Aplicar criterios de IMAGEN ESTATICA — NO hay audio, NO hay timecodes de video, evalua composicion visual + copy + overlay. NO penalices la ausencia de script o audio porque no aplica en este formato. ' : '') +
+    (esImagen ? 'Aplicar criterios de IMAGEN ESTATICA — NO hay audio, NO hay timecodes de video, evalua composicion visual + copy + overlay. NO penalices la ausencia de script o audio porque no aplica en este formato. El pack IM tiene 4 secciones: (1) PROMPT IMAGEN ELEVENLABS 9:16, (2) PROMPT IMAGEN ELEVENLABS 1:1, (3) TEXTO OVERLAY PARA DISENO, (4) COPY META ADS - 3 VARIANTES. LEE las 4 secciones antes de evaluar — especialmente overlay y copy donde vive el problema, vocabulario y CTA. ' : '') +
     'CRITERIOS A EVALUAR:' +
     criterio1 +
     criterio2 +
@@ -1563,7 +1563,7 @@ async function correrAuditoriaROAR(){
     criterio5 +
     criterio6 +
     criterio7 +
-    ' PACK A AUDITAR:' + packContent.substring(0, 1500) +
+    ' PACK A AUDITAR (completo con todas las secciones):\n' + packContent.substring(0, 3000) +
     ' AL FINAL: VEREDICTO FINAL con una de estas tres opciones:' +
     ' ✅ APROBADO — listo para produccion' +
     ' ⚠️ APROBADO CON OBSERVACIONES — puede publicarse con estos ajustes menores: [lista]' +
