@@ -1522,15 +1522,24 @@ async function correrAuditoriaROAR(){
   const anguloSkuMap = { perdida:'PerdidaEcon', comparativo:'CompOperativo', testimonial:'Testimonial', problema_fisico:'ProblemaFisico', imagen_profesional:'ImagenProf' };
   const anguloSkuSeg = anguloSkuMap[anguloIdAudit] || 'SinAngulo';
 
+  const esEOV = (capaVal === 'EOV');
+  const criterio1 = esEOV
+    ? ' 1) ANDROMEDA (regla especial EOV): La bolsa generica que FALLA es protagonista visual del problema en 0-3s — NO la carne/marisco sola. APROBADO si: (a) 0-3s muestra el PROBLEMA con una bolsa generica (bolsa que se truena, se desfonda, se rompe, la perforan) y esa bolsa fallida es el foco visual, (b) la bolsa ROAR aparece como solucion DESPUES del segundo 7. FALLO solo si: 0-3s muestra unicamente carne/marisco sin ninguna bolsa visible, o la carne/marisco es el foco visual en vez del fallo de la bolsa. IMPORTANTE: en EOV esta BIEN que la bolsa ROAR no aparezca en 0-3s — esa es la formula ganadora.'
+    : ' 1) ANDROMEDA: La bolsa ROAR es protagonista visual en 0-3s (no la carne/marisco)';
+  const criterio6 = esEOV
+    ? ' 6) ESTRUCTURA EOV: 0-3s problema visible con bolsa generica + audio dolor operador / 3-7s overlay texto del problema (la bolsa ROAR AUN no aparece) / 7-12s bolsa ROAR protagonista como solucion + CTA WhatsApp. FALLO si la bolsa ROAR aparece antes del segundo 7.'
+    : ' 6) ESTRUCTURA: Sigue 0-3s bolsa protagonista SIN avatar visible (audio del operador PUEDE empezar en segundo 0 — es correcto y es parte de la formula ganadora) / 3-7s overlay problema / 7-12s avatar+CTA';
+
   const p = 'Eres el auditor de creativos de ROAR Plasticos GDL. ' +
     'Analiza este pack creativo y evalua CADA criterio con APROBADO o FALLO + razon de una linea. ' +
+    'CAPA DEL PACK: ' + capaVal + (esEOV ? ' — aplicar reglas especiales EOV en criterios 1 y 6' : '') + '. ' +
     'CRITERIOS A EVALUAR:' +
-    ' 1) ANDROMEDA: La bolsa es protagonista visual en 0-3s (no la carne/marisco)' +
+    criterio1 +
     ' 2) ENTORNO: Hay senales de negocio en primeros 3s (mostrador/bascula/cajas/operacion)' +
     ' 3) PROBLEMA: El dolor aparece ANTES que la solucion' +
     ' 4) VOCABULARIO: Revisa SOLO el audio y script del video (NO el copy escrito de Meta Ads). FALLO UNICAMENTE si Cal.170 o Calibre 170 aparece en el AUDIO o SCRIPT del video. El copy escrito de Meta Ads SIEMPRE puede tener Cal.170 — NO es fallo. APROBADO si el audio/script usa lenguaje operador: se truena/desfonda/revienta.' +
-    ' 5) SEGMENTO: Menciona el giro especifico (carniceria/marisqueria/polleria/etc)' +
-    ' 6) ESTRUCTURA: Sigue 0-3s bolsa protagonista SIN avatar visible (audio del operador PUEDE empezar en segundo 0 — es correcto y es parte de la formula ganadora) / 3-7s overlay problema / 7-12s avatar+CTA' +
+    ' 5) SEGMENTO: Menciona el giro especifico (carniceria/marisqueria/polleria/etc). APROBADO tambien si el contexto del pack menciona carne, carnicero, marisco, pescaderia, pollo, pollero, res, camaron, etc — aunque no diga la palabra exacta del giro. Solo FALLO si NO hay ninguna referencia al giro en ninguna forma (ni directa ni indirecta via producto/operador).' +
+    criterio6 +
     ' 7) CTA: Hay llamada a accion hacia WhatsApp' +
     ' PACK A AUDITAR:' + packContent.substring(0, 1500) +
     ' AL FINAL: VEREDICTO FINAL con una de estas tres opciones:' +
