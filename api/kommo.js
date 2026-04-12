@@ -16,40 +16,66 @@ module.exports = async function handler(req, res) {
         const days = Number(body.days || 7);
         const since = Math.floor((Date.now() - days*24*60*60*1000) / 1000);
         let messages = [];
+        let totalChats = 0;
         let totalNotas = 0;
+        let source = '';
+        const authHeaders = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-        const extractText = (n) => {
+        const extractChatText = (m) => {
+          if (!m) return '';
+          // Kommo chats API suele entregar el texto en content.text o message.text
+          if (m.content && typeof m.content === 'object') {
+            return m.content.text || m.content.message || m.content.body || '';
+          }
+          if (m.message && typeof m.message === 'object') {
+            return m.message.text || m.message.body || '';
+          }
+          return m.text || m.body || m.message || '';
+        };
+
+        const extractNoteText = (n) => {
           const p = n.params || {};
           return p.text || p.message || p.body || p.comment || p.service || '';
         };
 
-        // 1) Endpoint cross-entity de notas (Kommo v4)
+        // 1) PRIMARIO — /api/v4/chats
         try {
-          const notesUrl = `https://${subdomain}.kommo.com/api/v4/leads/notes?limit=250&filter[updated_at][from]=${since}`;
-          const notesRes = await fetch(notesUrl, { headers: { 'Authorization': `Bearer ${token}` } });
-          if (notesRes.ok) {
-            const nd = await notesRes.json();
-            const notes = (nd._embedded && nd._embedded.notes) || [];
-            totalNotas += notes.length;
-            notes.forEach(n => {
-              const t = extractText(n);
-              if (typeof t === 'string' && t.length > 2) messages.push(t);
-            });
-          }
-        } catch (e) { /* continue to fallback */ }
+          const chatsUrl = `https://${subdomain}.kommo.com/api/v4/chats?limit=50`;
+          const chatsRes = await fetch(chatsUrl, { headers: authHeaders });
+          if (chatsRes.ok) {
+            const cd = await chatsRes.json();
+            const chats = (cd._embedded && cd._embedded.chats) || cd.chats || [];
+            totalChats = chats.length;
+            const chatIds = chats.map(c => c.id || c.chat_id || c.uuid).filter(Boolean);
 
-        // 2) Fallback: jalar leads recientes y sus notas en paralelo
+            // 2) Para cada chat, jalar /chats/{id}/messages en paralelo (limite 30)
+            const msgResults = await Promise.all(chatIds.slice(0, 30).map(id =>
+              fetch(`https://${subdomain}.kommo.com/api/v4/chats/${id}/messages?limit=100`, { headers: authHeaders })
+                .then(r => r.ok ? r.json() : null)
+                .catch(() => null)
+            ));
+            msgResults.forEach(r => {
+              if (!r) return;
+              const msgs = (r._embedded && r._embedded.messages) || r.messages || [];
+              msgs.forEach(m => {
+                const t = extractChatText(m);
+                if (typeof t === 'string' && t.length > 2) messages.push(t);
+              });
+            });
+            if (messages.length > 0) source = 'kommo_chats_' + days + 'd';
+          }
+        } catch (e) { /* continue a fallback */ }
+
+        // 3) FALLBACK — leads recientes y sus notas
         if (messages.length === 0) {
           try {
             const leadsUrl = `https://${subdomain}.kommo.com/api/v4/leads?limit=50&filter[updated_at][from]=${since}`;
-            const lr = await fetch(leadsUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+            const lr = await fetch(leadsUrl, { headers: authHeaders });
             const ld = await lr.json();
             const leads = (ld._embedded && ld._embedded.leads) || [];
             const ids = leads.slice(0, 30).map(l => l.id);
             const results = await Promise.all(ids.map(id =>
-              fetch(`https://${subdomain}.kommo.com/api/v4/leads/${id}/notes?limit=50`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-              })
+              fetch(`https://${subdomain}.kommo.com/api/v4/leads/${id}/notes?limit=50`, { headers: authHeaders })
                 .then(r => r.ok ? r.json() : { _embedded: { notes: [] } })
                 .catch(() => ({ _embedded: { notes: [] } }))
             ));
@@ -57,19 +83,21 @@ module.exports = async function handler(req, res) {
               const ns = (r._embedded && r._embedded.notes) || [];
               totalNotas += ns.length;
               ns.forEach(n => {
-                const t = extractText(n);
+                const t = extractNoteText(n);
                 if (typeof t === 'string' && t.length > 2) messages.push(t);
               });
             });
+            if (messages.length > 0) source = 'kommo_notes_fallback_' + days + 'd';
           } catch (e) { /* continue */ }
         }
 
         return res.status(200).json({
           ok: true,
           totalMensajes: messages.length,
+          totalChats: totalChats,
           totalNotas: totalNotas,
           messages: messages.slice(0, 1000),
-          source: 'kommo_notes_' + days + 'd'
+          source: source || 'kommo_empty_' + days + 'd'
         });
       }
 
