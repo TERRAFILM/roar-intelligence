@@ -61,6 +61,46 @@ module.exports = async function handler(req, res) {
         });
       }
 
+      if (body.action === 'debug_events') {
+        const base = `https://${subdomain}.kommo.com/api/v4`;
+
+        const hit = async (label, url) => {
+          const started = Date.now();
+          const r = await fetchJson(url);
+          const ms = Date.now() - started;
+          return {
+            label, url, ok: r.ok, status: r.status, ms,
+            data: r.data,
+            _parsed: r.data !== null,
+            _rawPreview: r.data === null ? (r.rawText || '').slice(0, 500) : undefined,
+            error: r.error
+          };
+        };
+
+        // Traer 5 eventos crudos por cada tipo conocido + uno sin filtro de tipo
+        const calls = await Promise.all([
+          hit('events_incoming_chat_message', `${base}/events?filter[type]=incoming_chat_message&limit=5`),
+          hit('events_chat_message_in',       `${base}/events?filter[type]=chat_message_in&limit=5`),
+          hit('events_any_recent',            `${base}/events?limit=5`)
+        ]);
+
+        // Aplanar los eventos encontrados y exponer cada uno completo para inspeccion
+        const sampleEvents = [];
+        calls.forEach(c => {
+          const evs = (c.data && c.data._embedded && c.data._embedded.events) || [];
+          evs.forEach(ev => sampleEvents.push({ _from: c.label, event: ev }));
+        });
+
+        return res.status(200).json({
+          ok: true,
+          subdomain: subdomain || null,
+          hasToken: Boolean(token),
+          calls: calls,
+          sampleEventsCount: sampleEvents.length,
+          sampleEvents: sampleEvents
+        });
+      }
+
       if (body.action === 'debug_notes') {
         const base = `https://${subdomain}.kommo.com/api/v4`;
 
