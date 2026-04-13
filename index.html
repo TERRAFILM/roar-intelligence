@@ -844,6 +844,35 @@ async function genAudio(){
       'k-p7': ['precio','cuanto','costo','barato','cuesta','precios']
     };
 
+    // Primero intenta leer del webhook en tiempo real
+    try {
+      const rw = await fetch('/api/kommo-webhook');
+      const dw = await rw.json();
+      if (dw.ok && dw.counters && dw.counters.total_mensajes_analizados > 0) {
+        const c = dw.counters;
+        const map = {
+          'k-p1': c.se_rompe_truena   || 0,
+          'k-p2': c.doble_bolsa       || 0,
+          'k-p3': c.no_soporta_peso   || 0,
+          'k-p4': c.calor_revienta     || 0,
+          'k-p5': c.picos_perforan     || 0,
+          'k-p6': c.frio_congelador    || 0,
+          'k-p7': c.solo_precio        || 0
+        };
+        Object.entries(map).forEach(([id, val]) => {
+          const el = document.getElementById(id);
+          if (el) el.value = val;
+        });
+        guardarMencionesWA();
+        persistMencionesWA();
+        btn.textContent = '✅ Menciones cargadas del webhook en vivo';
+        btn.disabled = false;
+        return;
+      }
+    } catch(ewh) {
+      console.warn('[webhook-fallback] usando Kommo API:', ewh.message);
+    }
+
     try {
       const r = await fetch('/api/kommo', {
         method: 'POST',
