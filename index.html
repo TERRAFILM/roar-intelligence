@@ -1709,7 +1709,7 @@ async function correrAuditoriaROAR(){
   const anguloAudit = window._anguloSeleccionado;
   const anguloIdAudit = anguloAudit ? anguloAudit.id : 'SinAngulo';
   const anguloLabelAudit = anguloAudit ? anguloAudit.label : 'No especificado';
-  const anguloSkuMap = { perdida:'PerdidaEcon', comparativo:'CompOperativo', testimonial:'Testimonial', problema_fisico:'ProblemaFisico', imagen_profesional:'ImagenProf' };
+  const anguloSkuMap = { perdida:'PerdidaEcon', comparativo:'CompOperativo', testimonial:'Testimonial', problema_fisico:'ProblemaFisico', imagen_profesional:'ImagenProf', validacion_dolor:'ValidacionDolor' };
   const anguloSkuSeg = anguloSkuMap[anguloIdAudit] || 'SinAngulo';
 
   const esEOV = (capaVal === 'EOV');
@@ -2065,7 +2065,8 @@ const ANGULOS_NARRATIVOS = [
   { id:'comparativo',        label:'Comparativo operativo', capas:['COMP','AI'],       riesgo:'MEDIO' },
   { id:'testimonial',        label:'Testimonial directo',   capas:['EOV','AI'],        riesgo:'BAJO' },
   { id:'problema_fisico',    label:'Problema fisico',       capas:['EOV','AI','IM'],   riesgo:'BAJO' },
-  { id:'imagen_profesional', label:'Imagen profesional',    capas:['IM','MARCA'],      riesgo:'CRITICO' }
+  { id:'imagen_profesional', label:'Imagen profesional',    capas:['IM','MARCA'],      riesgo:'CRITICO' },
+  { id:'validacion_dolor',   label:'Validacion del dolor',  capas:['EOV','AI'],        riesgo:'BAJO' }
 ];
 window._anguloSeleccionado = null;
 window._angulosSemana = window._angulosSemana || JSON.parse(localStorage.getItem('roar_angulos_semana') || '[]');
