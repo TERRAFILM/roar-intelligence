@@ -422,6 +422,23 @@ const PROMPT_BASE_CREATIVO = function(segVal, capaVal, hookVal, anguloTxt){
     ' 3) Material reciclado — se rompe sola al jalarla. 4) Sello irregular — cabe mas arriba que abajo.' +
     ' 5) La anudan la levantan y revienta el cuerpo. 6) Comida caliente (frijoles/caldos) la revienta.' +
     ' 7) Picos de camaron o huesos filosos la perforan.' +
+    ' ═══ RESTRICCION POR SEGMENTO (CRITICA, NO NEGOCIABLE) ═══' +
+    ' DOLORES PERMITIDOS segun segmento:' +
+    ' carniceria -> SOLO problemas {1,2,3,4,5,6}. PROHIBIDO #7 (picos/camaron).' +
+    ' mariscos -> SOLO problemas {1,2,3,4,5,7}. PROHIBIDO #6 (caldos calientes).' +
+    ' lavanderia -> SOLO problemas {2,3,4,5}. PROHIBIDO #1, #6, #7.' +
+    ' granel -> SOLO problemas {2,3,4}. PROHIBIDO #1, #5, #6, #7.' +
+    ' industrial -> SOLO problemas {2,3,4,5}. PROHIBIDO #1, #6, #7.' +
+    ' El segmento que recibiste es: ' + segVal + '.' +
+    ' Por lo tanto SOLO usa los dolores permitidos para ese segmento.' +
+    ' PRODUCTOS PROHIBIDOS DE MENCIONAR FUERA DE TU SEGMENTO:' +
+    ' Si segmento=carniceria: NO menciones camaron, marisco, pescado, ropa, granos.' +
+    ' Si segmento=mariscos: NO menciones carne de res, cerdo, pollo, ropa, granos.' +
+    ' Si segmento=lavanderia: NO menciones comida ni mariscos.' +
+    ' EL SKU GENERADO DEBE INCLUIR EL VALOR EXACTO DEL SEGMENTO RECIBIDO.' +
+    ' Si recibiste "carniceria", el SKU debe contener "Carniceria".' +
+    ' NO cambies el segmento bajo ninguna circunstancia.' +
+    ' ═══════════════════════════════════════════════' +
     ' REGLAS ANDROMEDA OBLIGATORIAS: LA BOLSA es protagonista, NO la carne/marisco.' +
     ' R1: Entorno negocio en primeros 3s. R2: Problema antes que producto. R3: Volumen visual, no en copy.' +
     ' REGLAS PRODUCTO: CARNE=cherry-red+marbling blanco NUNCA oscura. CAMARON=gris translucido+escarcha NUNCA rosa.' +
