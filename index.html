@@ -341,6 +341,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
   </div>
 </div>
 </div>
+</div>
 
 <div id="tab-set-multicapa" class="tab">
 <div class="stitle">&#127916; Set Multi-Capa — 12 creativos bajo INSIGHT MAESTRO</div>
@@ -1999,7 +2000,8 @@ function cargarGanadorEnSetMultiCapa(){
     alert('Genera un pack creativo primero en la pestana Creativos.');
     return;
   }
-  const skuMatch = skuRaw.match(/([A-Z]{2,}\|WA\|[A-Za-z0-9\|:.]+)/);
+  // Regex estricto: 7 campos separados por '|'. Evita capturar 'Usar este nombre...' que el DOM concatena despues del SKU.
+  const skuMatch = skuRaw.match(/[A-Z]+\|[A-Z]+\|[\dx]+\|[A-Za-z0-9]+\|[A-Za-z]+\|[A-Za-z]+\|[\d:]+/);
   if(!skuMatch){
     alert('El pack no esta auditado. Corre la Auditoria ROAR primero (necesita SKU generado).');
     return;
@@ -2013,8 +2015,9 @@ function cargarGanadorEnSetMultiCapa(){
   try { packEstructurado = parseaPackMarkdown(pack, capaVal); }
   catch(e){ packEstructurado = { pack_raw: pack, parse_error: e.message }; }
 
+  const skuLimpio = skuMatch[0];
   SET_MULTICAPA_STATE.ganador = {
-    sku: skuMatch[1],
+    sku: skuLimpio,
     capa: capaVal,
     segmento: segVal,
     hook: hookVal,
@@ -2031,7 +2034,7 @@ function cargarGanadorEnSetMultiCapa(){
     segmento: segVal,
     hook: hookVal,
     anguloId: SET_MULTICAPA_STATE.ganador.anguloId,
-    sku: skuMatch[1],
+    sku: skuLimpio,
     pack_markdown: pack,
     pack_estructurado: packEstructurado,
     status: 'aprobado_ganador',
