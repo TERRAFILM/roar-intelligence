@@ -81,6 +81,7 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <button class="nb" onclick="tab('intel',this)">&#129504; Intelligence</button>
 <button class="nb" onclick="tab('acciones',this)">&#9889; Acciones</button>
 <button class="nb" onclick="tab('creativos',this)">&#127916; Creativos</button>
+<button class="nb" onclick="tab('set-multicapa',this);inicializarSetMultiCapaUI()">&#127916; Set Multi-Capa</button>
 <button class="nb" onclick="tab('bitacora',this)">&#128221; Bitácora</button>
 <button class="nb" onclick="tab('competitiva',this)">&#128269; Competencia</button>
 <button class="nb" onclick="tab('creditos',this);cargarCreditos()">&#128176; Creditos</button>
@@ -335,8 +336,64 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
   <div class="stitle">&#128640; Exportar a App 2</div>
   <div style="padding:10px;background:#111;border:1px solid #4AC34A;border-radius:8px;margin-top:8px">
     <div style="font-size:12px;color:#888;margin-bottom:8px">Pack auditado y aprobado — listo para producir en App 2.</div>
-    <button class="btn bp" onclick="exportarAApp2()" style="width:100%;background:#4AC34A">&#128640; Copiar pack para App 2</button>
+    <button class="btn bp" onclick="cargarGanadorEnSetMultiCapa()" style="width:100%;background:#FFD700;color:#000;font-weight:bold">&#127919; Cargar ganador en Set Multi-Capa (12 creativos)</button>
     <div id="export-status" style="font-size:11px;color:#888;text-align:center;margin-top:6px"></div>
+  </div>
+</div>
+</div>
+
+<div id="tab-set-multicapa" class="tab">
+<div class="stitle">&#127916; Set Multi-Capa — 12 creativos bajo INSIGHT MAESTRO</div>
+<div class="card">
+  <div id="set-banner-ganador" style="padding:12px;background:#2a1f00;border-left:4px solid #FFA000;margin-bottom:12px;color:#FFE082;font-size:13px">
+    &#9888;&#65039; No hay ganador cargado. Ve a pestana Creativos, genera y audita un pack, luego presiona "Cargar ganador en Set Multi-Capa".
+  </div>
+
+  <div id="set-prev-banner" style="display:none;padding:10px;background:#0d47a1;color:#fff;border-radius:6px;margin-bottom:12px;font-size:12px"></div>
+
+  <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap;background:#111;padding:10px;border-radius:6px">
+    <strong style="color:#4AC34A">Matriz:</strong>
+    <label>AI:<input id="mat-AI" type="number" value="4" min="0" max="10" style="width:50px;margin-left:4px" oninput="actualizarTotalMatriz()"></label>
+    <label>IM:<input id="mat-IM" type="number" value="2" min="0" max="10" style="width:50px;margin-left:4px" oninput="actualizarTotalMatriz()"></label>
+    <label>EOV:<input id="mat-EOV" type="number" value="3" min="0" max="10" style="width:50px;margin-left:4px" oninput="actualizarTotalMatriz()"></label>
+    <label>MARCA:<input id="mat-MARCA" type="number" value="2" min="0" max="10" style="width:50px;margin-left:4px" oninput="actualizarTotalMatriz()"></label>
+    <label>COMP:<input id="mat-COMP" type="number" value="1" min="0" max="10" style="width:50px;margin-left:4px" oninput="actualizarTotalMatriz()"></label>
+    <span>Total: <strong id="mat-total" style="color:#FFD700">12</strong></span>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button id="set-gen-btn" class="btn bp" disabled onclick="generarSetMultiCapa()" style="flex:1">
+      &#128640; Generar Set Multi-Capa a partir del ganador
+    </button>
+    <button class="btn" onclick="limpiarSetMultiCapa()" style="background:#b71c1c;color:#fff">
+      &#128465;&#65039; Limpiar set
+    </button>
+  </div>
+
+  <div id="set-progreso" style="display:none;padding:10px;background:#0d47a1;color:#fff;border-radius:6px;margin-bottom:12px;font-size:12px"></div>
+
+  <table id="set-tabla" style="width:100%;border-collapse:collapse;margin-top:12px;font-size:12px">
+    <thead>
+      <tr style="background:#263238;color:#fff">
+        <th style="padding:8px;border:1px solid #333">#</th>
+        <th style="padding:8px;border:1px solid #333">Capa</th>
+        <th style="padding:8px;border:1px solid #333;text-align:left">Hook</th>
+        <th style="padding:8px;border:1px solid #333">Status</th>
+        <th style="padding:8px;border:1px solid #333">Accion</th>
+      </tr>
+    </thead>
+    <tbody id="set-tabla-body">
+      <tr><td colspan="5" style="padding:20px;text-align:center;color:#999">Carga un ganador para empezar</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:16px;padding:12px;background:#0d2818;border-radius:6px;border:1px solid #4AC34A">
+    <button id="set-export-btn" class="btn bp" disabled onclick="exportarSetAApp2()" style="width:100%;background:#4AC34A">
+      &#128640; Exportar Set Completo a App 2
+    </button>
+    <div id="set-export-status" style="text-align:center;margin-top:8px;color:#aaa;font-size:12px">
+      0/12 aprobados &mdash; necesitas 9 para exportar
+    </div>
   </div>
 </div>
 </div>
@@ -346,6 +403,217 @@ select,input[type=text],input[type=number]{width:100%;padding:10px;background:#1
 <script>
 const PWD='ROAR-Intel-2026';
 const API='/api/chat';
+
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTES COMPARTIDAS — reusadas por genCreativo, correrAuditoriaROAR
+// y el pipeline batch generarYAuditarPack() del Set Multi-Capa.
+// No modifican comportamiento; son extracciones byte-identicas.
+// ═══════════════════════════════════════════════════════════════
+
+const PROMPT_BASE_CREATIVO = function(segVal, capaVal, hookVal, anguloTxt){
+  return 'Eres el sistema creativo de ROAR Plasticos GDL. Bolsa 50x70 Cal.170 La que no te deja tirado.' +
+    ' Segmento: ' + segVal + ' | Capa: ' + capaVal + ' | Hook: ' + hookVal + ' | ANGULO NARRATIVO: ' + anguloTxt +
+    ' VOCABULARIO REAL DEL OPERADOR (usar siempre, nunca tecnicismos):' +
+    ' "se truena" "se desfonda" "se cae la carne" "la jalo y se abre" "revienta al levantarla"' +
+    ' "los picos la perforan" "le pongo caliente y se derrite" "ya no pongo doble bolsa" "la que no te deja tirado".' +
+    ' PROBLEMAS REALES RESUELTOS POR ROAR:' +
+    ' 1) Sale del congelador y se truena por frio. 2) No soporta el peso — se desfonda del sello.' +
+    ' 3) Material reciclado — se rompe sola al jalarla. 4) Sello irregular — cabe mas arriba que abajo.' +
+    ' 5) La anudan la levantan y revienta el cuerpo. 6) Comida caliente (frijoles/caldos) la revienta.' +
+    ' 7) Picos de camaron o huesos filosos la perforan.' +
+    ' REGLAS ANDROMEDA OBLIGATORIAS: LA BOLSA es protagonista, NO la carne/marisco.' +
+    ' R1: Entorno negocio en primeros 3s. R2: Problema antes que producto. R3: Volumen visual, no en copy.' +
+    ' REGLAS PRODUCTO: CARNE=cherry-red+marbling blanco NUNCA oscura. CAMARON=gris translucido+escarcha NUNCA rosa.' +
+    ' Bascula=20.00kg LED verde. Bolsa 50x70 llena 85% oval. Guantes azules nitrilo. Sangre solo adentro.' +
+    ' Ambiente=BRILLANTE mexicano, paredes blancas, acero inox, fluorescentes. CERO oscuro.' +
+    ' UNIFORME: mandil mezclilla oscura sobre polo gris (NO mandil blanco).' +
+    ' COBERTURA: entrega a toda la republica mexicana.' +
+    ' REGLA CRITICA VOCABULARIO: NUNCA mencionar Cal.170 o Calibre 170 en el AUDIO o SCRIPT — solo decir bolsas ROAR o la bolsa. Cal.170 puede ir SOLO en copy escrito de Meta Ads.' +
+    ' REGLA CRITICA CTA: El CTA SIEMPRE debe decir WHATSAPP explicitamente. NUNCA solo Mandame mensaje.' +
+    ' REGLA ABSOLUTA: NUNCA inventar numeros de telefono ni datos de contacto. Solo decir WhatsApp sin numero.' +
+    ' ============ REGLAS FINALES OBLIGATORIAS — TODAS LAS CAPAS ============' +
+    ' REGLA FINAL 1 — CTA WHATSAPP OBLIGATORIO EN EL VIDEO: toda pieza debe cerrar con un CTA verbal y visual que diga literalmente "Mandame WhatsApp" o "Escribeme al WhatsApp". NUNCA incluir numero de telefono ni datos de contacto inventados. El CTA debe estar tanto en el audio como en overlay de texto.' +
+    ' REGLA FINAL 2 — PROBLEMA ANTES QUE SOLUCION EN LOS PRIMEROS 7 SEGUNDOS: el dolor/problema del operador (bolsa que se truena, se desfonda, se rompe, los picos la perforan) debe aparecer ANTES que cualquier mencion visual o verbal de la solucion ROAR. Si la bolsa ROAR aparece como protagonista antes del segundo 7 el creativo esta CONTAMINADO y debe rechazarse.' +
+    ' REGLA FINAL 3 — LA BOLSA ES SIEMPRE EL PROTAGONISTA VISUAL: la camara, el enfoque, la luz y la atencion visual siempre estan sobre la bolsa — nunca sobre la carne, el marisco, el pollo ni ningun producto contenido. Si el viewer piensa "que buena carne" el creativo FALLO Andromeda. El viewer debe pensar "esa bolsa aguanta todo".';
+};
+
+const PROMPT_CAPAS_CREATIVO = {
+  'AI': ' CAPA AI — AVATAR + SCRIPT HEYGEN.' +
+      ' Este pack es VIDEO con avatar HeyGen hablando a camara.' +
+      ' ESTRUCTURA VIDEO 12-14 segundos:' +
+      ' 0-3s: SOLO BOLSA close-up nudo tension SIN avatar — audio del carnicero empieza inmediato.' +
+      ' 3-7s: Problema/educativo, overlay texto blanco bold.' +
+      ' 7-12s: Avatar HeyGen cierre + CTA WhatsApp + logo ROAR.' +
+      ' HEYGEN: voz Enrique Mondragon, Spanish Mexico, ElevenLabs V3, estabilidad 60-65%, tono carnicero coloquial NO locutor.' +
+      ' AUDIO: ambiente industrial -20dB, CERO musica alegre.' +
+      ' Genera PACK COMPLETO en este orden exacto:' +
+      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
+      ' (prompt detallado para generar imagen limpia SIN TEXTO, bolsa protagonista, entorno negocio)' +
+      ' ## 2) SCRIPT HEYGEN 12-14SEG DOCUMENTAL MEXICANO' +
+      ' (guion completo con timecodes 0-3s 3-7s 7-12s, overlay texto, narracion avatar con lineas de audio entre comillas)' +
+      ' ## 3) COPY META ADS - 3 VARIANTES' +
+      ' (Ganador/Miedo perdida/Social proof, max 125 caracteres cada uno)' +
+      ' ## 4) INSTRUCCIONES CAPCUT' +
+      ' (zonas seguras Stories 14/20, Reels 14/35/6, fuente blanca bold)' +
+      ' Max 500 palabras total.',
+
+  'EOV': ' CAPA EOV — EVIDENCIA OPERATIVA REAL.' +
+      ' Este pack es VIDEO/FOTO de evidencia real filmada en el negocio del cliente. NO usa avatar HeyGen.' +
+      ' CONCEPTO: video crudo, real, grabado con celular en carniceria/marisqueria real. Bolsa bajo estres real.' +
+      ' CONTENIDO: la bolsa aguantando peso real, congelador real, operacion diaria real.' +
+      ' TONO: cero produccion, cero locutor. Audio ambiente real del negocio.' +
+      ' ESTRUCTURA GANADORA OBLIGATORIA 12 SEGUNDOS — NO DESVIARSE:' +
+      ' 0-3s: PROBLEMA VISIBLE — el operador muestra el problema real en camara (bolsa que se truena al sacarla del congelador, se desfonda con el peso, se rompe al jalarla, los picos la perforan). Audio del operador describiendo EL DOLOR en primera persona con vocabulario real — "se me truena" "se me desfonda" "se me cae la carne". La bolsa ROAR AUN NO APARECE. Solo el problema con la bolsa mala.' +
+      ' 3-7s: OVERLAY TEXTO bold blanco del problema sobre plano detalle del fallo (bolsa rota, carne en el piso, producto perdido). La SOLUCION AUN NO APARECE. Seguir anclando el dolor.' +
+      ' 7-12s: BOLSA ROAR protagonista — aparece por primera vez como contraste/solucion. Plano close-up de la bolsa ROAR aguantando el mismo peso sin romperse. CTA WhatsApp explicito en overlay y audio: "Mandame WhatsApp" o "Escribeme al WhatsApp". Logo ROAR al cierre. CERO numero de telefono.' +
+      ' REGLA ABSOLUTA EOV: problema ANTES que producto — si la bolsa ROAR aparece antes del segundo 7 el creativo esta CONTAMINADO.' +
+      ' Genera PACK COMPLETO:' +
+      ' ## 1) GUION DE GRABACION EOV (12 seg con timecodes 0-3s / 3-7s / 7-12s explicitos)' +
+      ' (plano 0-3s: problema visible con bolsa mala + audio dolor operador. plano 3-7s: detalle del fallo + overlay problema. plano 7-12s: bolsa ROAR aguantando + CTA WhatsApp)' +
+      ' ## 2) TEXTO OVERLAY PARA EDICION' +
+      ' (frases cortas en vocabulario operador — primeros overlays SOLO del problema, ultimo overlay con CTA WhatsApp)' +
+      ' ## 3) COPY META ADS - 3 VARIANTES' +
+      ' (tono testimonial real, max 125 caracteres cada uno, CTA WhatsApp explicito)' +
+      ' ## 4) INSTRUCCIONES CAPCUT' +
+      ' (cortes rapidos, sin transiciones fancy, fuente blanca bold, respetar estructura 0-3s problema / 3-7s overlay / 7-12s solucion+CTA)' +
+      ' Max 450 palabras total.',
+
+  'IM': ' CAPA IM — INTENCION MEDIA.' +
+      ' Este pack es IMAGEN ESTATICA o CARRUSEL para captar atencion media en el feed. NO video, NO avatar.' +
+      ' CONCEPTO: imagen llamativa con la bolsa protagonista + overlay texto con hook del problema.' +
+      ' La imagen debe detener el scroll — visual impactante de la bolsa en contexto de negocio real.' +
+      ' Genera PACK COMPLETO:' +
+      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
+      ' (prompt detallado: bolsa protagonista, entorno negocio, SIN TEXTO en la imagen, composicion vertical para Stories/Reels)' +
+      ' ## 2) PROMPT IMAGEN ELEVENLABS 1:1' +
+      ' (misma escena adaptada a formato cuadrado para feed)' +
+      ' ## 3) TEXTO OVERLAY PARA DISEÑO' +
+      ' (headline + subhead + CTA en vocabulario operador — para sobreimponer en Canva/CapCut)' +
+      ' ## 4) COPY META ADS - 3 VARIANTES' +
+      ' (hook visual, curiosidad, max 125 caracteres cada uno)' +
+      ' Max 400 palabras total.',
+
+  'MARCA': ' CAPA MARCA — BRANDING.' +
+      ' Este pack es contenido de MARCA/BRAND para construir autoridad y reconocimiento. NO es performance directo.' +
+      ' CONCEPTO: posicionar ROAR como el especialista en bolsas para negocios de alimentos en Mexico.' +
+      ' TONO: profesional pero cercano, autoridad tecnica sin tecnicismos, orgullo de marca mexicana.' +
+      ' MARCA es brand awareness — el fondo neutro o iluminacion de estudio es intencional y correcto.' +
+      ' Debe mencionar siempre el tipo de negocio al que sirve ROAR (carniceria, marisqueria, negocio de alimentos).' +
+      ' Genera PACK COMPLETO:' +
+      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
+      ' (prompt: producto hero shot, bolsa ROAR protagonista con iluminacion premium, fondo neutro aceptable, composicion vertical)' +
+      ' ## 2) PROMPT IMAGEN ELEVENLABS 1:1' +
+      ' (misma escena adaptada a formato cuadrado para feed)' +
+      ' ## 3) TEXTO OVERLAY PARA DISENO' +
+      ' (HEADLINE brand promise + SUBHEAD que mencione el giro al que sirve ROAR: carniceria/marisqueria/negocios de alimentos + CTA WhatsApp literal "Mandame WhatsApp" o "Escribeme al WhatsApp" — los 3 elementos son obligatorios, para sobreimponer en Canva)' +
+      ' ## 4) COPY META ADS - 3 VARIANTES' +
+      ' (brand promise / autoridad tecnica / origen mexicano, cada variante debe incluir el CTA WhatsApp literal "Mandame WhatsApp" o "Escribeme al WhatsApp" y mencionar el tipo de negocio carniceria/marisqueria/negocio de alimentos, max 150 caracteres cada uno)' +
+      ' ## 5) HASHTAGS Y CONTEXTO' +
+      ' (hashtags relevantes, momento de publicacion sugerido, plataforma ideal)' +
+      ' REGLA CRITICA MARCA: CTA WhatsApp obligatorio tanto en TEXTO OVERLAY como en las 3 variantes de COPY META ADS. NUNCA numero de telefono.' +
+      ' Max 400 palabras total.',
+
+  'COMP': ' CAPA COMP — COMPARATIVO.' +
+      ' Este pack es contenido COMPARATIVO: ROAR vs competencia generica / vs doble bolsa / vs material reciclado.' +
+      ' CONCEPTO: demostrar superioridad de la bolsa ROAR 50x70 Cal.170 con datos y comparacion directa.' +
+      ' NUNCA nombrar marcas competidoras por nombre — comparar contra "la bolsa del mercado" o "la bolsa barata".' +
+      ' ESTRUCTURA: problema con bolsa generica → solucion con ROAR → matematicas del ahorro.' +
+      ' Genera PACK COMPLETO:' +
+      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
+      ' (prompt: split visual lado a lado — izquierda bolsa rota/desfondada vs derecha bolsa ROAR intacta con peso)' +
+      ' ## 2) TABLA COMPARATIVA' +
+      ' (3-5 criterios: resistencia, sello, peso max, doble bolsa, costo real — ROAR gana en todos)' +
+      ' ## 3) COPY META ADS - 3 VARIANTES' +
+      ' (comparativo directo, matematicas de ahorro, reto al operador, max 125 caracteres cada uno)' +
+      ' ## 4) INSTRUCCIONES CAPCUT' +
+      ' (formato split o carrusel, transiciones de revelacion)' +
+      ' Max 400 palabras total.'
+};
+
+// Criterios auditoria por capa. Sombra de correrAuditoriaROAR calibrada el 16 abr.
+const _C_VIDEO_C2 = ' 2) ENTORNO: Hay senales de negocio en primeros 3s (mostrador/bascula/cajas/operacion)';
+const _C_VIDEO_C3 = ' 3) PROBLEMA: El dolor aparece ANTES que la solucion';
+const _C_VIDEO_C4 = ' 4) VOCABULARIO: Revisa SOLO el audio y script del video (NO el copy escrito de Meta Ads). FALLO UNICAMENTE si Cal.170 o Calibre 170 aparece en el AUDIO o SCRIPT del video. El copy escrito de Meta Ads SIEMPRE puede tener Cal.170 — NO es fallo. APROBADO si el audio/script usa lenguaje operador: se truena/desfonda/revienta.';
+const _C_VIDEO_C5 = ' 5) SEGMENTO: Menciona el giro especifico (carniceria/marisqueria/polleria/etc). APROBADO tambien si el contexto del pack menciona carne, carnicero, marisco, pescaderia, pollo, pollero, res, camaron, etc — aunque no diga la palabra exacta del giro. Solo FALLO si NO hay ninguna referencia al giro en ninguna forma (ni directa ni indirecta via producto/operador).';
+const _C_VIDEO_C7 = ' 7) CTA: Hay llamada a accion hacia WhatsApp';
+
+const PROMPT_CRITERIOS_AUDITORIA = {
+  'AI': {
+    tipoCreativo: 'VIDEO CON AVATAR',
+    extraPrefix: '',
+    c1: ' 1) ANDROMEDA: La bolsa ROAR es protagonista visual en 0-3s (no la carne/marisco)',
+    c2: _C_VIDEO_C2,
+    c3: _C_VIDEO_C3,
+    c4: _C_VIDEO_C4,
+    c5: _C_VIDEO_C5,
+    c6: ' 6) ESTRUCTURA: Sigue 0-3s bolsa protagonista SIN avatar visible (audio del operador PUEDE empezar en segundo 0 — es correcto y es parte de la formula ganadora) / 3-7s overlay problema / 7-12s avatar+CTA',
+    c7: _C_VIDEO_C7
+  },
+  'EOV': {
+    tipoCreativo: 'VIDEO EOV (evidencia operativa real)',
+    extraPrefix: 'Aplicar reglas especiales EOV en criterios 1 y 6. ',
+    c1: ' 1) ANDROMEDA (regla especial EOV): La bolsa generica que FALLA es protagonista visual del problema en 0-3s — NO la carne/marisco sola. APROBADO si: (a) 0-3s muestra el PROBLEMA con una bolsa generica (bolsa que se truena, se desfonda, se rompe, la perforan) y esa bolsa fallida es el foco visual, (b) la bolsa ROAR aparece como solucion DESPUES del segundo 7. FALLO solo si: 0-3s muestra unicamente carne/marisco sin ninguna bolsa visible, o la carne/marisco es el foco visual en vez del fallo de la bolsa. IMPORTANTE: en EOV esta BIEN que la bolsa ROAR no aparezca en 0-3s — esa es la formula ganadora.',
+    c2: _C_VIDEO_C2,
+    c3: _C_VIDEO_C3,
+    c4: _C_VIDEO_C4,
+    c5: _C_VIDEO_C5,
+    c6: ' 6) ESTRUCTURA EOV: 0-3s problema visible con bolsa generica + audio dolor operador / 3-7s overlay texto del problema (la bolsa ROAR AUN no aparece) / 7-12s bolsa ROAR protagonista como solucion + CTA WhatsApp. FALLO si la bolsa ROAR aparece antes del segundo 7.',
+    c7: _C_VIDEO_C7
+  },
+  'COMP': {
+    tipoCreativo: 'VIDEO/SPLIT COMPARATIVO (sin avatar)',
+    extraPrefix: 'Aplicar reglas especiales COMP en criterios 1 y 6 — este es un video/split comparativo sin avatar. NO penalices ausencia de avatar HeyGen ni narracion a camara — la tabla comparativa y el split screen SON el formato. El contraste entre la bolsa ROAR y la bolsa generica ES el protagonismo visual. ',
+    c1: ' 1) ANDROMEDA (regla especial COMP — split comparativo): El pack COMP es un split screen o comparativo directo entre bolsa ROAR y bolsa generica. APROBADO si AMBAS bolsas (ROAR y generica) son protagonistas visuales del split — el CONTRASTE entre las dos bolsas ES el protagonismo. NO se requiere que ROAR sea la unica bolsa en 0-3s. FALLO solo si la carne/marisco domina visualmente en vez del contraste entre bolsas, o si no hay bolsas visibles en el split.',
+    c2: _C_VIDEO_C2,
+    c3: _C_VIDEO_C3,
+    c4: _C_VIDEO_C4,
+    c5: _C_VIDEO_C5,
+    c6: ' 6) ESTRUCTURA COMP (split comparativo sin avatar): 0-3s entorno de carniceria/marisqueria con AMBAS bolsas visibles (ROAR vs generica) / 3-7s problema de la bolsa generica destacado (rota, desfondada, doble bolsa) / 7-15s comparacion directa ROAR vs generica (split lado a lado, ROAR aguantando, generica fallando) / 15s+ matematicas del ahorro + CTA WhatsApp. APROBADO si sigue esta formula comparativa. IMPORTANTE: COMP NO tiene avatar — la tabla comparativa y el split screen SON el formato. NO penalices la ausencia de avatar HeyGen ni de narracion a camara.',
+    c7: _C_VIDEO_C7
+  },
+  'IM': {
+    tipoCreativo: 'IMAGEN ESTATICA (sin audio, sin timecodes)',
+    extraPrefix: 'Aplicar criterios de IMAGEN ESTATICA — NO hay audio, NO hay timecodes de video, evalua composicion visual + copy + overlay. NO penalices la ausencia de script o audio porque no aplica en este formato. El pack IM tiene 4 secciones: (1) PROMPT IMAGEN ELEVENLABS 9:16, (2) PROMPT IMAGEN ELEVENLABS 1:1, (3) TEXTO OVERLAY PARA DISENO, (4) COPY META ADS - 3 VARIANTES. LEE las 4 secciones antes de evaluar — especialmente overlay y copy donde vive el problema, vocabulario y CTA. ',
+    c1: ' 1) ANDROMEDA (imagen estatica IM): Busca en la SECCION "PROMPT IMAGEN ELEVENLABS 9:16" y "PROMPT IMAGEN ELEVENLABS 1:1". APROBADO si el prompt de imagen especifica que la bolsa ROAR es protagonista visual (palabras clave: bolsa protagonista, bolsa en primer plano, bolsa hero shot, bolsa close-up, bolsa centrada). Puede haber carne/marisco visible como CONTEXTO del negocio — eso NO es fallo. FALLO solo si el prompt describe la carne como foco principal o no menciona explicitamente que la bolsa sea protagonista.',
+    c2: ' 2) ENTORNO (imagen estatica): Busca en la SECCION "PROMPT IMAGEN" si describe contexto de negocio — mostrador, bascula, ambiente de carniceria/marisqueria, cajas, acero inoxidable, operador trabajando. FALLO si el prompt describe fondo neutro, estudio aislado, o no menciona contexto de negocio.',
+    c3: ' 3) PROBLEMA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" y en "COPY META ADS - 3 VARIANTES". APROBADO si el headline, subhead u overlay menciona el PROBLEMA (se truena/desfonda/revienta/perforan/se rompe/doble bolsa/pierdo producto) ANTES que la solucion ROAR. NO busques el problema en el prompt de imagen — el problema vive en el overlay y el copy. FALLO solo si NI el overlay NI el copy mencionan el dolor del operador.',
+    c4: ' 4) VOCABULARIO (imagen estatica): Evalua SOLO la SECCION "TEXTO OVERLAY PARA DISENO" y la SECCION "COPY META ADS - 3 VARIANTES". NO evalues el prompt de imagen — el prompt es instruccion tecnica, no copy para el usuario. APROBADO si el texto overlay y/o el copy Meta Ads usan lenguaje operador real (se truena, se desfonda, revienta, los picos perforan, ya no pongo doble bolsa, aguanta, no te deja tirado). FALLO solo si el overlay y copy usan tecnicismos o lenguaje corporativo.',
+    c5: ' 5) SEGMENTO (imagen estatica): Busca en cualquier seccion (prompt/overlay/copy) si menciona el giro especifico (carniceria/marisqueria/polleria/etc). APROBADO tambien si el contexto del pack menciona carne, carnicero, marisco, pescaderia, pollo, pollero, res, camaron, etc — aunque no diga la palabra exacta del giro.',
+    c6: ' 6) ESTRUCTURA (imagen estatica): Verifica en la SECCION "TEXTO OVERLAY PARA DISENO" que existan los 3 elementos: HEADLINE (titular grande con el problema), SUBHEAD (linea de soporte o solucion) y CTA (llamada a WhatsApp). APROBADO si los 3 estan presentes en el overlay. FALLO solo si falta headline, subhead o CTA en la seccion overlay. NO aplican timecodes de video.',
+    c7: ' 7) CTA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" o en "COPY META ADS - 3 VARIANTES" una llamada a accion a WhatsApp (literal "Mandame WhatsApp" o "Escribeme al WhatsApp" o "WhatsApp"). APROBADO si el CTA WhatsApp aparece en overlay o copy. FALLO solo si no hay CTA WhatsApp en ninguna de esas dos secciones, o si el CTA es solo un numero de telefono.'
+  },
+  'MARCA': {
+    tipoCreativo: 'IMAGEN ESTATICA (sin audio, sin timecodes)',
+    extraPrefix: 'Aplicar criterios de IMAGEN ESTATICA — NO hay audio, NO hay timecodes de video, evalua composicion visual + copy + overlay. NO penalices la ausencia de script o audio porque no aplica en este formato. El pack IM tiene 4 secciones: (1) PROMPT IMAGEN ELEVENLABS 9:16, (2) PROMPT IMAGEN ELEVENLABS 1:1, (3) TEXTO OVERLAY PARA DISENO, (4) COPY META ADS - 3 VARIANTES. LEE las 4 secciones antes de evaluar — especialmente overlay y copy donde vive el problema, vocabulario y CTA. ',
+    c1: ' 1) ANDROMEDA (MARCA — brand awareness): Busca en la SECCION "PROMPT IMAGEN ELEVENLABS 9:16" y "PROMPT IMAGEN ELEVENLABS 1:1". APROBADO si el prompt especifica que la bolsa ROAR es protagonista visual (bolsa hero shot, bolsa en primer plano, bolsa centrada, iluminacion premium sobre la bolsa). En MARCA el fondo neutro, estudio o iluminacion aislada son INTENCIONALES y correctos — NO requiere carne ni marisco ni contexto de negocio en la imagen. FALLO solo si el prompt no menciona explicitamente que la bolsa sea protagonista o si describe otro objeto como foco principal.',
+    c2: ' 2) ENTORNO (MARCA — brand awareness): En MARCA el fondo neutro y el estudio son intencionales. APROBADO si el prompt describe iluminacion premium, fondo neutro profesional, estudio, acabado editorial o cualquier entorno coherente con branding. FALLO solo si el prompt es caotico o sin criterio visual.',
+    c3: ' 3) PROBLEMA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" y en "COPY META ADS - 3 VARIANTES". APROBADO si el headline, subhead u overlay menciona el PROBLEMA (se truena/desfonda/revienta/perforan/se rompe/doble bolsa/pierdo producto) ANTES que la solucion ROAR. NO busques el problema en el prompt de imagen — el problema vive en el overlay y el copy. FALLO solo si NI el overlay NI el copy mencionan el dolor del operador. En MARCA este criterio es flexible: APROBADO tambien si el overlay o copy expresan la promesa de marca como contraste al dolor del mercado (ej "la que no te deja tirado", "la que si aguanta"), aunque no nombre el problema literalmente.',
+    c4: ' 4) VOCABULARIO (imagen estatica): Evalua SOLO la SECCION "TEXTO OVERLAY PARA DISENO" y la SECCION "COPY META ADS - 3 VARIANTES". NO evalues el prompt de imagen — el prompt es instruccion tecnica, no copy para el usuario. APROBADO si el texto overlay y/o el copy Meta Ads usan lenguaje operador real (se truena, se desfonda, revienta, los picos perforan, ya no pongo doble bolsa, aguanta, no te deja tirado). FALLO solo si el overlay y copy usan tecnicismos o lenguaje corporativo.',
+    c5: ' 5) SEGMENTO (MARCA): Busca en TEXTO OVERLAY, COPY META ADS o subhead si menciona el tipo de negocio al que sirve ROAR (carniceria, marisqueria, negocio de alimentos, carne, marisco, pollo, camaron, operador, carnicero, marisquero). APROBADO aunque el giro no sea el foco principal del mensaje — basta con que el copy lo mencione como contexto de a quien le habla la marca. FALLO solo si NINGUNA seccion del pack menciona ningun tipo de negocio ni giro.',
+    c6: ' 6) ESTRUCTURA (imagen estatica): Verifica en la SECCION "TEXTO OVERLAY PARA DISENO" que existan los 3 elementos: HEADLINE (titular grande con la brand promise o autoridad), SUBHEAD (linea de soporte que menciona el giro al que sirve ROAR) y CTA (llamada a WhatsApp). APROBADO si los 3 estan presentes en el overlay. FALLO solo si falta headline, subhead o CTA en la seccion overlay. NO aplican timecodes de video.',
+    c7: ' 7) CTA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" o en "COPY META ADS - 3 VARIANTES" una llamada a accion a WhatsApp (literal "Mandame WhatsApp" o "Escribeme al WhatsApp" o "WhatsApp"). APROBADO si el CTA WhatsApp aparece en overlay o copy. FALLO solo si no hay CTA WhatsApp en ninguna de esas dos secciones, o si el CTA es solo un numero de telefono.'
+  }
+};
+
+// Matriz de angulos compatibles por capa (fuente: generarComboGanadora index.html:1967-1971).
+const ANGULOS_COMPATIBLES_POR_CAPA = {
+  'AI':    ['perdida', 'comparativo', 'testimonial', 'problema_fisico'],
+  'EOV':   ['perdida', 'testimonial', 'problema_fisico'],
+  'IM':    ['perdida', 'problema_fisico', 'imagen_profesional'],
+  'MARCA': ['imagen_profesional'],
+  'COMP':  ['comparativo']
+};
+
+// Estado Set Multi-Capa — 12 creativos bajo un INSIGHT MAESTRO.
+let SET_MULTICAPA_STATE = {
+  ganador: null,
+  matriz: { AI:4, IM:2, EOV:3, MARCA:2, COMP:1 },
+  packs: [],
+  timestamp: null
+};
+const SET_STORAGE_KEY = 'roar_set_multicapa_state_v1';
+const SET_EXPORT_THRESHOLD = 9;
+
 function login(){
   if(document.getElementById('pwd').value===PWD){
     document.getElementById('login').style.display='none';
@@ -507,127 +775,9 @@ async function genCreativo(){
   // Angulo narrativo — inyectado en el circuito
   const anguloSel = window._anguloSeleccionado;
   const anguloTxt = anguloSel ? (anguloSel.label + ' (riesgo ' + anguloSel.riesgo + ')') : 'No especificado';
-  // Base comun a todas las capas
-  const base = 'Eres el sistema creativo de ROAR Plasticos GDL. Bolsa 50x70 Cal.170 La que no te deja tirado.' +
-    ' Segmento: ' + segVal + ' | Capa: ' + capaVal + ' | Hook: ' + hookVal + ' | ANGULO NARRATIVO: ' + anguloTxt +
-    ' VOCABULARIO REAL DEL OPERADOR (usar siempre, nunca tecnicismos):' +
-    ' "se truena" "se desfonda" "se cae la carne" "la jalo y se abre" "revienta al levantarla"' +
-    ' "los picos la perforan" "le pongo caliente y se derrite" "ya no pongo doble bolsa" "la que no te deja tirado".' +
-    ' PROBLEMAS REALES RESUELTOS POR ROAR:' +
-    ' 1) Sale del congelador y se truena por frio. 2) No soporta el peso — se desfonda del sello.' +
-    ' 3) Material reciclado — se rompe sola al jalarla. 4) Sello irregular — cabe mas arriba que abajo.' +
-    ' 5) La anudan la levantan y revienta el cuerpo. 6) Comida caliente (frijoles/caldos) la revienta.' +
-    ' 7) Picos de camaron o huesos filosos la perforan.' +
-    ' REGLAS ANDROMEDA OBLIGATORIAS: LA BOLSA es protagonista, NO la carne/marisco.' +
-    ' R1: Entorno negocio en primeros 3s. R2: Problema antes que producto. R3: Volumen visual, no en copy.' +
-    ' REGLAS PRODUCTO: CARNE=cherry-red+marbling blanco NUNCA oscura. CAMARON=gris translucido+escarcha NUNCA rosa.' +
-    ' Bascula=20.00kg LED verde. Bolsa 50x70 llena 85% oval. Guantes azules nitrilo. Sangre solo adentro.' +
-    ' Ambiente=BRILLANTE mexicano, paredes blancas, acero inox, fluorescentes. CERO oscuro.' +
-    ' UNIFORME: mandil mezclilla oscura sobre polo gris (NO mandil blanco).' +
-    ' COBERTURA: entrega a toda la republica mexicana.' +
-    ' REGLA CRITICA VOCABULARIO: NUNCA mencionar Cal.170 o Calibre 170 en el AUDIO o SCRIPT — solo decir bolsas ROAR o la bolsa. Cal.170 puede ir SOLO en copy escrito de Meta Ads.' +
-    ' REGLA CRITICA CTA: El CTA SIEMPRE debe decir WHATSAPP explicitamente. NUNCA solo Mandame mensaje.' +
-    ' REGLA ABSOLUTA: NUNCA inventar numeros de telefono ni datos de contacto. Solo decir WhatsApp sin numero.' +
-    ' ============ REGLAS FINALES OBLIGATORIAS — TODAS LAS CAPAS ============' +
-    ' REGLA FINAL 1 — CTA WHATSAPP OBLIGATORIO EN EL VIDEO: toda pieza debe cerrar con un CTA verbal y visual que diga literalmente "Mandame WhatsApp" o "Escribeme al WhatsApp". NUNCA incluir numero de telefono ni datos de contacto inventados. El CTA debe estar tanto en el audio como en overlay de texto.' +
-    ' REGLA FINAL 2 — PROBLEMA ANTES QUE SOLUCION EN LOS PRIMEROS 7 SEGUNDOS: el dolor/problema del operador (bolsa que se truena, se desfonda, se rompe, los picos la perforan) debe aparecer ANTES que cualquier mencion visual o verbal de la solucion ROAR. Si la bolsa ROAR aparece como protagonista antes del segundo 7 el creativo esta CONTAMINADO y debe rechazarse.' +
-    ' REGLA FINAL 3 — LA BOLSA ES SIEMPRE EL PROTAGONISTA VISUAL: la camara, el enfoque, la luz y la atencion visual siempre estan sobre la bolsa — nunca sobre la carne, el marisco, el pollo ni ningun producto contenido. Si el viewer piensa "que buena carne" el creativo FALLO Andromeda. El viewer debe pensar "esa bolsa aguanta todo".';
-
-  // Prompts especificos por capa — cada capa genera SOLO su tipo de creativo
-  var capaPrompts = {
-    'AI': ' CAPA AI — AVATAR + SCRIPT HEYGEN.' +
-      ' Este pack es VIDEO con avatar HeyGen hablando a camara.' +
-      ' ESTRUCTURA VIDEO 12-14 segundos:' +
-      ' 0-3s: SOLO BOLSA close-up nudo tension SIN avatar — audio del carnicero empieza inmediato.' +
-      ' 3-7s: Problema/educativo, overlay texto blanco bold.' +
-      ' 7-12s: Avatar HeyGen cierre + CTA WhatsApp + logo ROAR.' +
-      ' HEYGEN: voz Enrique Mondragon, Spanish Mexico, ElevenLabs V3, estabilidad 60-65%, tono carnicero coloquial NO locutor.' +
-      ' AUDIO: ambiente industrial -20dB, CERO musica alegre.' +
-      ' Genera PACK COMPLETO en este orden exacto:' +
-      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
-      ' (prompt detallado para generar imagen limpia SIN TEXTO, bolsa protagonista, entorno negocio)' +
-      ' ## 2) SCRIPT HEYGEN 12-14SEG DOCUMENTAL MEXICANO' +
-      ' (guion completo con timecodes 0-3s 3-7s 7-12s, overlay texto, narracion avatar con lineas de audio entre comillas)' +
-      ' ## 3) COPY META ADS - 3 VARIANTES' +
-      ' (Ganador/Miedo perdida/Social proof, max 125 caracteres cada uno)' +
-      ' ## 4) INSTRUCCIONES CAPCUT' +
-      ' (zonas seguras Stories 14/20, Reels 14/35/6, fuente blanca bold)' +
-      ' Max 500 palabras total.',
-
-    'EOV': ' CAPA EOV — EVIDENCIA OPERATIVA REAL.' +
-      ' Este pack es VIDEO/FOTO de evidencia real filmada en el negocio del cliente. NO usa avatar HeyGen.' +
-      ' CONCEPTO: video crudo, real, grabado con celular en carniceria/marisqueria real. Bolsa bajo estres real.' +
-      ' CONTENIDO: la bolsa aguantando peso real, congelador real, operacion diaria real.' +
-      ' TONO: cero produccion, cero locutor. Audio ambiente real del negocio.' +
-      ' ESTRUCTURA GANADORA OBLIGATORIA 12 SEGUNDOS — NO DESVIARSE:' +
-      ' 0-3s: PROBLEMA VISIBLE — el operador muestra el problema real en camara (bolsa que se truena al sacarla del congelador, se desfonda con el peso, se rompe al jalarla, los picos la perforan). Audio del operador describiendo EL DOLOR en primera persona con vocabulario real — "se me truena" "se me desfonda" "se me cae la carne". La bolsa ROAR AUN NO APARECE. Solo el problema con la bolsa mala.' +
-      ' 3-7s: OVERLAY TEXTO bold blanco del problema sobre plano detalle del fallo (bolsa rota, carne en el piso, producto perdido). La SOLUCION AUN NO APARECE. Seguir anclando el dolor.' +
-      ' 7-12s: BOLSA ROAR protagonista — aparece por primera vez como contraste/solucion. Plano close-up de la bolsa ROAR aguantando el mismo peso sin romperse. CTA WhatsApp explicito en overlay y audio: "Mandame WhatsApp" o "Escribeme al WhatsApp". Logo ROAR al cierre. CERO numero de telefono.' +
-      ' REGLA ABSOLUTA EOV: problema ANTES que producto — si la bolsa ROAR aparece antes del segundo 7 el creativo esta CONTAMINADO.' +
-      ' Genera PACK COMPLETO:' +
-      ' ## 1) GUION DE GRABACION EOV (12 seg con timecodes 0-3s / 3-7s / 7-12s explicitos)' +
-      ' (plano 0-3s: problema visible con bolsa mala + audio dolor operador. plano 3-7s: detalle del fallo + overlay problema. plano 7-12s: bolsa ROAR aguantando + CTA WhatsApp)' +
-      ' ## 2) TEXTO OVERLAY PARA EDICION' +
-      ' (frases cortas en vocabulario operador — primeros overlays SOLO del problema, ultimo overlay con CTA WhatsApp)' +
-      ' ## 3) COPY META ADS - 3 VARIANTES' +
-      ' (tono testimonial real, max 125 caracteres cada uno, CTA WhatsApp explicito)' +
-      ' ## 4) INSTRUCCIONES CAPCUT' +
-      ' (cortes rapidos, sin transiciones fancy, fuente blanca bold, respetar estructura 0-3s problema / 3-7s overlay / 7-12s solucion+CTA)' +
-      ' Max 450 palabras total.',
-
-    'IM': ' CAPA IM — INTENCION MEDIA.' +
-      ' Este pack es IMAGEN ESTATICA o CARRUSEL para captar atencion media en el feed. NO video, NO avatar.' +
-      ' CONCEPTO: imagen llamativa con la bolsa protagonista + overlay texto con hook del problema.' +
-      ' La imagen debe detener el scroll — visual impactante de la bolsa en contexto de negocio real.' +
-      ' Genera PACK COMPLETO:' +
-      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
-      ' (prompt detallado: bolsa protagonista, entorno negocio, SIN TEXTO en la imagen, composicion vertical para Stories/Reels)' +
-      ' ## 2) PROMPT IMAGEN ELEVENLABS 1:1' +
-      ' (misma escena adaptada a formato cuadrado para feed)' +
-      ' ## 3) TEXTO OVERLAY PARA DISEÑO' +
-      ' (headline + subhead + CTA en vocabulario operador — para sobreimponer en Canva/CapCut)' +
-      ' ## 4) COPY META ADS - 3 VARIANTES' +
-      ' (hook visual, curiosidad, max 125 caracteres cada uno)' +
-      ' Max 400 palabras total.',
-
-    'MARCA': ' CAPA MARCA — BRANDING.' +
-      ' Este pack es contenido de MARCA/BRAND para construir autoridad y reconocimiento. NO es performance directo.' +
-      ' CONCEPTO: posicionar ROAR como el especialista en bolsas para negocios de alimentos en Mexico.' +
-      ' TONO: profesional pero cercano, autoridad tecnica sin tecnicismos, orgullo de marca mexicana.' +
-      ' MARCA es brand awareness — el fondo neutro o iluminacion de estudio es intencional y correcto.' +
-      ' Debe mencionar siempre el tipo de negocio al que sirve ROAR (carniceria, marisqueria, negocio de alimentos).' +
-      ' Genera PACK COMPLETO:' +
-      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
-      ' (prompt: producto hero shot, bolsa ROAR protagonista con iluminacion premium, fondo neutro aceptable, composicion vertical)' +
-      ' ## 2) PROMPT IMAGEN ELEVENLABS 1:1' +
-      ' (misma escena adaptada a formato cuadrado para feed)' +
-      ' ## 3) TEXTO OVERLAY PARA DISENO' +
-      ' (HEADLINE brand promise + SUBHEAD que mencione el giro al que sirve ROAR: carniceria/marisqueria/negocios de alimentos + CTA WhatsApp literal "Mandame WhatsApp" o "Escribeme al WhatsApp" — los 3 elementos son obligatorios, para sobreimponer en Canva)' +
-      ' ## 4) COPY META ADS - 3 VARIANTES' +
-      ' (brand promise / autoridad tecnica / origen mexicano, cada variante debe incluir el CTA WhatsApp literal "Mandame WhatsApp" o "Escribeme al WhatsApp" y mencionar el tipo de negocio carniceria/marisqueria/negocio de alimentos, max 150 caracteres cada uno)' +
-      ' ## 5) HASHTAGS Y CONTEXTO' +
-      ' (hashtags relevantes, momento de publicacion sugerido, plataforma ideal)' +
-      ' REGLA CRITICA MARCA: CTA WhatsApp obligatorio tanto en TEXTO OVERLAY como en las 3 variantes de COPY META ADS. NUNCA numero de telefono.' +
-      ' Max 400 palabras total.',
-
-    'COMP': ' CAPA COMP — COMPARATIVO.' +
-      ' Este pack es contenido COMPARATIVO: ROAR vs competencia generica / vs doble bolsa / vs material reciclado.' +
-      ' CONCEPTO: demostrar superioridad de la bolsa ROAR 50x70 Cal.170 con datos y comparacion directa.' +
-      ' NUNCA nombrar marcas competidoras por nombre — comparar contra "la bolsa del mercado" o "la bolsa barata".' +
-      ' ESTRUCTURA: problema con bolsa generica → solucion con ROAR → matematicas del ahorro.' +
-      ' Genera PACK COMPLETO:' +
-      ' ## 1) PROMPT IMAGEN ELEVENLABS 9:16' +
-      ' (prompt: split visual lado a lado — izquierda bolsa rota/desfondada vs derecha bolsa ROAR intacta con peso)' +
-      ' ## 2) TABLA COMPARATIVA' +
-      ' (3-5 criterios: resistencia, sello, peso max, doble bolsa, costo real — ROAR gana en todos)' +
-      ' ## 3) COPY META ADS - 3 VARIANTES' +
-      ' (comparativo directo, matematicas de ahorro, reto al operador, max 125 caracteres cada uno)' +
-      ' ## 4) INSTRUCCIONES CAPCUT' +
-      ' (formato split o carrusel, transiciones de revelacion)' +
-      ' Max 400 palabras total.'
-  };
-
-  var capaExtra = capaPrompts[capaVal] || capaPrompts['AI'];
+  // Base + prompts por capa — extraidos a constantes top-level (PROMPT_BASE_CREATIVO / PROMPT_CAPAS_CREATIVO)
+  const base = PROMPT_BASE_CREATIVO(segVal, capaVal, hookVal, anguloTxt);
+  var capaExtra = PROMPT_CAPAS_CREATIVO[capaVal] || PROMPT_CAPAS_CREATIVO['AI'];
   const p = base + capaExtra;
   try{
     const r=await claude(p);
@@ -1741,6 +1891,523 @@ function exportarAApp2(){
   window.open(url, '_blank');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// SET MULTI-CAPA — 12 creativos bajo un INSIGHT MAESTRO.
+// Codigo aislado; no toca genCreativo() ni correrAuditoriaROAR().
+// Reusa PROMPT_BASE_CREATIVO, PROMPT_CAPAS_CREATIVO y PROMPT_CRITERIOS_AUDITORIA.
+// ═══════════════════════════════════════════════════════════════
+
+const _ANGULO_SKU_MAP = { perdida:'PerdidaEcon', comparativo:'CompOperativo', testimonial:'Testimonial', problema_fisico:'ProblemaFisico', imagen_profesional:'ImagenProf', validacion_dolor:'ValidacionDolor' };
+const _ANGULO_LABEL_MAP = { perdida:'Perdida economica', comparativo:'Comparativo operativo', testimonial:'Testimonial', problema_fisico:'Problema fisico', imagen_profesional:'Imagen profesional', validacion_dolor:'Validacion del dolor' };
+
+function _esc(s){ return (s||'').toString().replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+function _setPersistir(){
+  try {
+    SET_MULTICAPA_STATE.timestamp = new Date().toISOString();
+    localStorage.setItem(SET_STORAGE_KEY, JSON.stringify(SET_MULTICAPA_STATE));
+  } catch(e){ console.warn('No se pudo persistir Set Multi-Capa:', e.message); }
+}
+
+function _setCargarDeStorage(){
+  try {
+    const raw = localStorage.getItem(SET_STORAGE_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  } catch(e){ return null; }
+}
+
+function actualizarTotalMatriz(){
+  const capas = ['AI','IM','EOV','MARCA','COMP'];
+  let total = 0;
+  capas.forEach(function(c){
+    const el = document.getElementById('mat-'+c);
+    const v = el ? Math.max(0, parseInt(el.value||'0',10)||0) : 0;
+    SET_MULTICAPA_STATE.matriz[c] = v;
+    total += v;
+  });
+  const el = document.getElementById('mat-total');
+  if(el) el.textContent = total;
+}
+
+function inicializarSetMultiCapaUI(){
+  const previo = _setCargarDeStorage();
+  const banner = document.getElementById('set-prev-banner');
+  if(previo && previo.ganador && previo.packs && previo.packs.length > 0 && !SET_MULTICAPA_STATE.ganador){
+    if(banner){
+      banner.style.display = 'block';
+      banner.innerHTML = '&#128195; Set previo detectado: <strong>' + _esc(previo.ganador.sku) + '</strong> (' + previo.packs.length + ' packs guardados) ' +
+        '<button class="btn" onclick="_setContinuarPrevio()" style="background:#4AC34A;color:#000;margin-left:8px">Continuar</button> ' +
+        '<button class="btn" onclick="limpiarSetMultiCapa()" style="background:#b71c1c;color:#fff;margin-left:4px">Limpiar</button>';
+    }
+  } else if(banner) {
+    banner.style.display = 'none';
+  }
+  if(SET_MULTICAPA_STATE.ganador){
+    _setRenderGanadorBanner();
+    renderTablaSet();
+    actualizarBotonExport();
+    const btn = document.getElementById('set-gen-btn');
+    if(btn) btn.disabled = false;
+  }
+}
+
+function _setContinuarPrevio(){
+  const previo = _setCargarDeStorage();
+  if(!previo) return;
+  SET_MULTICAPA_STATE = previo;
+  if(!SET_MULTICAPA_STATE.matriz) SET_MULTICAPA_STATE.matriz = { AI:4, IM:2, EOV:3, MARCA:2, COMP:1 };
+  ['AI','IM','EOV','MARCA','COMP'].forEach(function(c){
+    const el = document.getElementById('mat-'+c);
+    if(el) el.value = SET_MULTICAPA_STATE.matriz[c];
+  });
+  actualizarTotalMatriz();
+  _setRenderGanadorBanner();
+  renderTablaSet();
+  actualizarBotonExport();
+  const btn = document.getElementById('set-gen-btn');
+  if(btn) btn.disabled = false;
+  const prev = document.getElementById('set-prev-banner');
+  if(prev) prev.style.display = 'none';
+}
+
+function _setRenderGanadorBanner(){
+  const banner = document.getElementById('set-banner-ganador');
+  if(!banner) return;
+  const g = SET_MULTICAPA_STATE.ganador;
+  if(!g){
+    banner.style.background = '#2a1f00';
+    banner.style.borderLeft = '4px solid #FFA000';
+    banner.style.color = '#FFE082';
+    banner.innerHTML = '&#9888;&#65039; No hay ganador cargado. Ve a pestana Creativos, genera y audita un pack, luego presiona "Cargar ganador en Set Multi-Capa".';
+    return;
+  }
+  banner.style.background = '#0d2818';
+  banner.style.borderLeft = '4px solid #4AC34A';
+  banner.style.color = '#B9F6CA';
+  banner.innerHTML = '<div style="color:#FFD700;font-weight:bold;margin-bottom:4px">&#127942; INSIGHT MAESTRO &mdash; Pack ganador cargado</div>' +
+    '<div style="font-family:monospace;font-size:12px;color:#fff">SKU: ' + _esc(g.sku) + '</div>' +
+    '<div style="font-size:12px;margin-top:4px">Capa: <strong>' + _esc(g.capa) + '</strong> &middot; Segmento: <strong>' + _esc(g.segmento) + '</strong> &middot; Angulo: <strong>' + _esc(g.anguloLabel||g.anguloId||'N/A') + '</strong></div>' +
+    '<div style="font-size:12px;margin-top:4px"><strong>Hook:</strong> ' + _esc(g.hook) + '</div>';
+}
+
+function cargarGanadorEnSetMultiCapa(){
+  const pack = document.getElementById('creat-out') ? document.getElementById('creat-out').innerText : '';
+  const skuEl = document.getElementById('auditoria-sku');
+  const skuRaw = skuEl ? skuEl.textContent : '';
+  if(!pack || pack === 'Configura y presiona Generar...'){
+    alert('Genera un pack creativo primero en la pestana Creativos.');
+    return;
+  }
+  const skuMatch = skuRaw.match(/([A-Z]{2,}\|WA\|[A-Za-z0-9\|:.]+)/);
+  if(!skuMatch){
+    alert('El pack no esta auditado. Corre la Auditoria ROAR primero (necesita SKU generado).');
+    return;
+  }
+  const segVal = document.getElementById('seg') ? document.getElementById('seg').value : '';
+  const capaVal = document.getElementById('capa') ? document.getElementById('capa').value : '';
+  const hookVal = document.getElementById('ang') ? document.getElementById('ang').value : '';
+  const angulo = window._anguloSeleccionado;
+
+  let packEstructurado;
+  try { packEstructurado = parseaPackMarkdown(pack, capaVal); }
+  catch(e){ packEstructurado = { pack_raw: pack, parse_error: e.message }; }
+
+  SET_MULTICAPA_STATE.ganador = {
+    sku: skuMatch[1],
+    capa: capaVal,
+    segmento: segVal,
+    hook: hookVal,
+    anguloId: angulo ? angulo.id : 'SinAngulo',
+    anguloLabel: angulo ? angulo.label : 'No especificado',
+    anguloRiesgo: angulo ? angulo.riesgo : 'N/A',
+    pack_markdown: pack,
+    pack_estructurado: packEstructurado
+  };
+
+  SET_MULTICAPA_STATE.packs = [{
+    indice: 0,
+    capa: capaVal,
+    segmento: segVal,
+    hook: hookVal,
+    anguloId: SET_MULTICAPA_STATE.ganador.anguloId,
+    sku: skuMatch[1],
+    pack_markdown: pack,
+    pack_estructurado: packEstructurado,
+    status: 'aprobado_ganador',
+    veredicto: 'GANADOR',
+    checks: null,
+    intentos: 1,
+    es_ganador: true
+  }];
+
+  _setPersistir();
+
+  const btnSet = document.querySelector('.nb[onclick*="set-multicapa"]');
+  if(btnSet) tab('set-multicapa', btnSet);
+
+  _setRenderGanadorBanner();
+  renderTablaSet();
+  actualizarBotonExport();
+  const btnGen = document.getElementById('set-gen-btn');
+  if(btnGen) btnGen.disabled = false;
+}
+
+async function generarHooksDelSet(ganador, matriz, faltanPorCapa){
+  const p = 'El SKU ganador de campana es ' + ganador.sku + '.' +
+    '\nCapa ganadora: ' + ganador.capa + ' | Segmento: ' + ganador.segmento + ' | Hook del ganador: ' + ganador.hook +
+    '\nAngulo narrativo: ' + (ganador.anguloLabel || 'N/A') +
+    '\n\nPack ganador (referencia estrategica del dolor/insight — NO copiar literal):\n"""\n' + (ganador.pack_markdown||'').substring(0,1800) + '\n"""' +
+    '\n\nGenera hooks/angulos para los packs adicionales que extiendan el INSIGHT MAESTRO (mismo dolor/segmento del ganador) adaptados al formato y audiencia de cada capa.' +
+    '\nFaltan generar por capa (cantidad): ' + JSON.stringify(faltanPorCapa) +
+    '\n\nREGLAS:' +
+    '\n- Cada hook: 4 a 8 palabras en vocabulario operador real (se truena, se desfonda, la perforan, doble bolsa, aguanta, no te deja tirado).' +
+    '\n- AI: hooks de testimonio/calibre para cliente caliente que ya conoce el dolor.' +
+    '\n- IM: hooks visuales que funcionen como headline sobre una imagen.' +
+    '\n- EOV: hooks crudos en primera persona del operador mostrando el problema real.' +
+    '\n- MARCA: hooks de promesa de marca/autoridad que mencionen el giro.' +
+    '\n- COMP: hooks comparativos contra la bolsa del mercado/barata/doble bolsa.' +
+    '\n- NO repitas hooks entre capas.' +
+    '\n\nRESPONDE SOLO JSON VALIDO sin prefacio, sin markdown, sin comentarios:' +
+    '\n{"AI":["hook1","hook2"],"IM":["hook1"],"EOV":["hook1","hook2"],"MARCA":["hook1"],"COMP":["hook1"]}' +
+    '\nDevuelve exactamente el numero pedido por cada capa. Si alguna capa pide 0, devuelve arreglo vacio.';
+
+  try {
+    const r = await claude(p);
+    const m = r.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('no-json');
+    const parsed = JSON.parse(m[0]);
+    return parsed;
+  } catch(e){
+    const out = { AI:[], IM:[], EOV:[], MARCA:[], COMP:[] };
+    Object.keys(faltanPorCapa).forEach(function(c){
+      for(let i=0; i<faltanPorCapa[c]; i++){
+        out[c].push(ganador.hook + ' (v' + (i+2) + ' ' + c + ')');
+      }
+    });
+    return out;
+  }
+}
+
+function buildPromptGenerarConInsight(ganador, capa, segmento, hook, anguloId){
+  const anguloLabel = _ANGULO_LABEL_MAP[anguloId] || anguloId || 'No especificado';
+  const insight = '\u2550\u2550\u2550 INSIGHT MAESTRO DE LA CAMPANA \u2550\u2550\u2550\n' +
+    'Esta campana se basa en el siguiente creativo ganador.\n' +
+    'SKU GANADOR: ' + ganador.sku + '\n' +
+    'CAPA GANADORA: ' + ganador.capa + '\n' +
+    'SEGMENTO: ' + ganador.segmento + '\n' +
+    'HOOK/DOLOR DEL GANADOR: ' + ganador.hook + '\n' +
+    'ANGULO NARRATIVO: ' + (ganador.anguloLabel||ganador.anguloId||'N/A') + '\n\n' +
+    'Pack ganador (referencia estrategica, NO copiar literal):\n"""\n' + (ganador.pack_markdown||'').substring(0,1800) + '\n"""\n\n' +
+    '\u2550\u2550\u2550 TU TAREA AHORA \u2550\u2550\u2550\n' +
+    'Genera un creativo de capa ' + capa + ' para esta MISMA campana.\n' +
+    '- Mantene el dolor/segmento del ganador: ' + ganador.segmento + ' + ' + ganador.hook + '\n' +
+    '- Adapta formato y audiencia al tipo de capa ' + capa + '.\n' +
+    '- Usa el hook especifico: ' + hook + '\n' +
+    '- Aplica las reglas Andromeda de capa ' + capa + ' (ver bloque siguiente).\n\n';
+  const base = PROMPT_BASE_CREATIVO(segmento, capa, hook, anguloLabel);
+  const capaExtra = PROMPT_CAPAS_CREATIVO[capa] || PROMPT_CAPAS_CREATIVO['AI'];
+  return insight + base + capaExtra;
+}
+
+function buildPromptAuditoriaPorCapa(packMarkdown, capa, segmento, hook, anguloId){
+  const crit = PROMPT_CRITERIOS_AUDITORIA[capa] || PROMPT_CRITERIOS_AUDITORIA['AI'];
+  const anguloLabel = _ANGULO_LABEL_MAP[anguloId] || anguloId || 'No especificado';
+  const anguloSkuSeg = _ANGULO_SKU_MAP[anguloId] || 'SinAngulo';
+  return 'Eres el auditor de creativos de ROAR Plasticos GDL. ' +
+    'Analiza este pack creativo y evalua CADA criterio con APROBADO o FALLO + razon de una linea. ' +
+    'CAPA DEL PACK: ' + capa + ' — TIPO DE CREATIVO: ' + crit.tipoCreativo + '. ' +
+    crit.extraPrefix +
+    'CRITERIOS A EVALUAR:' +
+    crit.c1 + crit.c2 + crit.c3 + crit.c4 + crit.c5 + crit.c6 + crit.c7 +
+    ' PACK A AUDITAR (completo con todas las secciones):\n' + (packMarkdown||'').substring(0, 3000) +
+    ' AL FINAL: VEREDICTO FINAL con una de estas tres opciones:' +
+    ' ✅ APROBADO — listo para produccion' +
+    ' ⚠️ APROBADO CON OBSERVACIONES — puede publicarse con estos ajustes menores: [lista]' +
+    ' ❌ RECHAZADO — corregir antes de producir: [lista de correcciones]' +
+    ' ANGULO NARRATIVO DE ESTE PACK: ' + anguloLabel + ' (codigo SKU: ' + anguloSkuSeg + ')' +
+    ' Si APROBADO o APROBADO CON OBSERVACIONES, genera el SKU en este formato exacto:' +
+    ' SKU: CAPA|WA|50x70|Hook3palabras|Segmento|Angulo|Formato' +
+    ' Ejemplo: AI|WA|50x70|DobleBoIsaFrio|Carniceria|PerdidaEcon|9:16' +
+    ' Usa ' + anguloSkuSeg + ' como segmento de angulo en el SKU generado.' +
+    ' Max 300 palabras. Directo y accionable.';
+}
+
+function parsearVeredictoAuditoria(textoResultado){
+  const r = textoResultado || '';
+  const esRechazado = /RECHAZADO/i.test(r);
+  const esObservaciones = /APROBADO CON OBSERVACIONES/i.test(r);
+  const esAprobado = !esRechazado && /APROBADO/i.test(r);
+  let veredicto;
+  if(esRechazado) veredicto = 'RECHAZADO';
+  else if(esObservaciones) veredicto = 'APROBADO_CON_OBSERVACIONES';
+  else if(esAprobado) veredicto = 'APROBADO';
+  else veredicto = 'INDETERMINADO';
+
+  const skuMatch = r.match(/SKU[^A-Z]*([A-Z]{2,}[|][A-Za-z0-9|:.]+)/);
+  const sku = skuMatch ? skuMatch[1] : null;
+  const claveCheck = function(key){
+    if(new RegExp(key + '[^\\n]{0,30}APROBADO','i').test(r)) return 'APROBADO';
+    if(new RegExp(key + '[^\\n]{0,30}FALLO','i').test(r)) return 'FALLO';
+    return 'N/A';
+  };
+  const checks = {
+    andromeda: claveCheck('ANDROMEDA'),
+    entorno: claveCheck('ENTORNO'),
+    problema: claveCheck('PROBLEMA'),
+    vocabulario: claveCheck('VOCABULARIO'),
+    segmento: claveCheck('SEGMENTO'),
+    estructura: claveCheck('ESTRUCTURA'),
+    cta: claveCheck('CTA')
+  };
+  const aprobado = (veredicto === 'APROBADO' || veredicto === 'APROBADO_CON_OBSERVACIONES');
+  return { veredicto: veredicto, sku: sku, checks: checks, aprobado: aprobado, texto: r };
+}
+
+async function generarYAuditarPack(ganador, capa, hook, anguloId){
+  const promptGen = buildPromptGenerarConInsight(ganador, capa, ganador.segmento, hook, anguloId);
+  let markdown;
+  try { markdown = await claude(promptGen); }
+  catch(e){ return { error: 'Error generando: ' + e.message, aprobado: false, intentos: 1, markdown: '', veredicto: 'ERROR' }; }
+
+  const promptAud1 = buildPromptAuditoriaPorCapa(markdown, capa, ganador.segmento, hook, anguloId);
+  let veredictoTxt1;
+  try { veredictoTxt1 = await claude(promptAud1); }
+  catch(e){ return { error: 'Error auditando: ' + e.message, aprobado: false, intentos: 1, markdown: markdown, veredicto: 'ERROR' }; }
+  const audit1 = parsearVeredictoAuditoria(veredictoTxt1);
+
+  if(audit1.aprobado){
+    let estructurado;
+    try { estructurado = parseaPackMarkdown(markdown, capa); }
+    catch(e){ estructurado = { pack_raw: markdown, parse_error: e.message }; }
+    return { markdown: markdown, estructurado: estructurado, sku: audit1.sku, checks: audit1.checks, veredicto: audit1.veredicto, aprobado: true, intentos: 1 };
+  }
+
+  // Reintento con feedback
+  const promptGen2 = promptGen + '\n\n\u2550\u2550 FEEDBACK DE AUDITORIA PREVIA (CORRIGE Y REGENERA) \u2550\u2550\n' +
+    'El pack anterior fue evaluado asi:\n' + (audit1.texto||'').substring(0,1200) +
+    '\n\nREGENERA el pack completo corrigiendo los puntos FALLO. Mantene las reglas Andromeda y el INSIGHT MAESTRO.';
+  let markdown2;
+  try { markdown2 = await claude(promptGen2); }
+  catch(e){
+    const est = parseaPackMarkdown(markdown, capa);
+    return { markdown: markdown, estructurado: est, sku: audit1.sku, checks: audit1.checks, veredicto: audit1.veredicto, aprobado: false, intentos: 2, error: 'Reintento fallo: '+e.message };
+  }
+  const promptAud2 = buildPromptAuditoriaPorCapa(markdown2, capa, ganador.segmento, hook, anguloId);
+  let veredictoTxt2;
+  try { veredictoTxt2 = await claude(promptAud2); }
+  catch(e){
+    const est = parseaPackMarkdown(markdown2, capa);
+    return { markdown: markdown2, estructurado: est, sku: audit1.sku, checks: audit1.checks, veredicto: 'ERROR', aprobado: false, intentos: 2, error: 'Auditoria 2 fallo: '+e.message };
+  }
+  const audit2 = parsearVeredictoAuditoria(veredictoTxt2);
+  let estructurado2;
+  try { estructurado2 = parseaPackMarkdown(markdown2, capa); }
+  catch(e){ estructurado2 = { pack_raw: markdown2, parse_error: e.message }; }
+  return { markdown: markdown2, estructurado: estructurado2, sku: audit2.sku, checks: audit2.checks, veredicto: audit2.veredicto, aprobado: audit2.aprobado, intentos: 2 };
+}
+
+function _resolverAnguloParaCapa(ganadorAnguloId, capa){
+  const compat = ANGULOS_COMPATIBLES_POR_CAPA[capa] || [];
+  if(compat.indexOf(ganadorAnguloId) >= 0) return ganadorAnguloId;
+  if(compat.indexOf('problema_fisico') >= 0) return 'problema_fisico';
+  return compat[0] || ganadorAnguloId;
+}
+
+async function generarSetMultiCapa(){
+  const g = SET_MULTICAPA_STATE.ganador;
+  if(!g){ alert('Carga primero un ganador desde Creativos.'); return; }
+  actualizarTotalMatriz();
+  const matriz = SET_MULTICAPA_STATE.matriz;
+  const total = matriz.AI + matriz.IM + matriz.EOV + matriz.MARCA + matriz.COMP;
+  if(total < 2){ alert('La matriz debe sumar al menos 2 packs.'); return; }
+
+  const btnGen = document.getElementById('set-gen-btn');
+  const progreso = document.getElementById('set-progreso');
+  if(btnGen) btnGen.disabled = true;
+  if(progreso){ progreso.style.display = 'block'; progreso.textContent = 'Pidiendo hooks derivados del ganador...'; }
+
+  // Resetear: conservar solo el ganador
+  SET_MULTICAPA_STATE.packs = SET_MULTICAPA_STATE.packs.filter(function(p){ return p.es_ganador; });
+
+  const faltan = Object.assign({}, matriz);
+  faltan[g.capa] = Math.max(0, faltan[g.capa] - 1);
+
+  const hooks = await generarHooksDelSet(g, matriz, faltan);
+
+  const cola = [];
+  ['AI','IM','EOV','MARCA','COMP'].forEach(function(capa){
+    const arr = hooks[capa] || [];
+    for(let i=0; i<faltan[capa]; i++){
+      const hk = arr[i] || (g.hook + ' (v' + (i+2) + ' ' + capa + ')');
+      cola.push({ capa: capa, hook: hk, anguloId: _resolverAnguloParaCapa(g.anguloId, capa) });
+    }
+  });
+
+  let idx = SET_MULTICAPA_STATE.packs.length;
+  cola.forEach(function(t){
+    SET_MULTICAPA_STATE.packs.push({
+      indice: idx++, capa: t.capa, segmento: g.segmento, hook: t.hook, anguloId: t.anguloId,
+      sku: null, pack_markdown: null, pack_estructurado: null, status: 'pendiente', veredicto: null, checks: null, intentos: 0, es_ganador: false
+    });
+  });
+  renderTablaSet();
+  _setPersistir();
+
+  const inicio = SET_MULTICAPA_STATE.packs.length - cola.length;
+  for(let i = inicio; i < SET_MULTICAPA_STATE.packs.length; i++){
+    const p = SET_MULTICAPA_STATE.packs[i];
+    p.status = 'generando';
+    renderTablaSet();
+    if(progreso) progreso.textContent = 'Procesando ' + (i+1) + '/' + SET_MULTICAPA_STATE.packs.length + ' — ' + p.capa + ' / ' + p.hook;
+
+    const res = await generarYAuditarPack(g, p.capa, p.hook, p.anguloId);
+    p.pack_markdown = res.markdown || '';
+    p.pack_estructurado = res.estructurado || null;
+    p.sku = res.sku || null;
+    p.veredicto = res.veredicto || 'INDETERMINADO';
+    p.checks = res.checks || null;
+    p.intentos = res.intentos || 1;
+    if(res.error){ p.status = 'error'; p.error = res.error; }
+    else if(res.aprobado){ p.status = 'aprobado'; }
+    else { p.status = 'rechazado_revision'; }
+
+    renderTablaSet();
+    actualizarBotonExport();
+    _setPersistir();
+  }
+
+  if(progreso) progreso.textContent = 'Set completado. Revisa la tabla y exporta si tienes \u2265 ' + SET_EXPORT_THRESHOLD + ' aprobados.';
+  if(btnGen) btnGen.disabled = false;
+}
+
+function renderTablaSet(){
+  const tbody = document.getElementById('set-tabla-body');
+  if(!tbody) return;
+  const packs = SET_MULTICAPA_STATE.packs || [];
+  if(packs.length === 0){
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#999">Carga un ganador para empezar</td></tr>';
+    return;
+  }
+  const statusBadge = function(s){
+    const map = {
+      'aprobado_ganador': '<span style="background:#FFD700;color:#000;padding:2px 8px;border-radius:4px;font-weight:bold">GANADOR</span>',
+      'pendiente': '<span style="color:#999">pendiente</span>',
+      'generando': '<span style="color:#64B5F6">generando\u2026</span>',
+      'auditando': '<span style="color:#FFB74D">auditando\u2026</span>',
+      'aprobado': '<span style="background:#1b5e20;color:#B9F6CA;padding:2px 8px;border-radius:4px">APROBADO</span>',
+      'rechazado_revision': '<span style="background:#b71c1c;color:#fff;padding:2px 8px;border-radius:4px">REVISION</span>',
+      'error': '<span style="background:#424242;color:#FFCDD2;padding:2px 8px;border-radius:4px">ERROR</span>'
+    };
+    return map[s] || s;
+  };
+  tbody.innerHTML = packs.map(function(p){
+    const vered = p.veredicto ? '<div style="font-size:10px;color:#888">' + _esc(p.veredicto) + (p.intentos>1?' (2 int)':'') + '</div>' : '';
+    const accion = p.pack_markdown ? '<button class="btn" onclick="verPackDeSet(' + p.indice + ')" style="font-size:11px;padding:4px 8px">Ver</button>' : '\u2014';
+    return '<tr style="border-bottom:1px solid #333">' +
+      '<td style="padding:6px;text-align:center;font-family:monospace;border:1px solid #333">' + p.indice + '</td>' +
+      '<td style="padding:6px;text-align:center;border:1px solid #333"><strong>' + _esc(p.capa) + '</strong></td>' +
+      '<td style="padding:6px;border:1px solid #333;font-size:11px">' + _esc(p.hook||'') + '</td>' +
+      '<td style="padding:6px;text-align:center;border:1px solid #333">' + statusBadge(p.status) + vered + '</td>' +
+      '<td style="padding:6px;text-align:center;border:1px solid #333">' + accion + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function verPackDeSet(indice){
+  const p = (SET_MULTICAPA_STATE.packs||[]).find(function(x){ return x.indice === indice; });
+  if(!p || !p.pack_markdown){ alert('Pack no disponible.'); return; }
+  const w = window.open('', '_blank', 'width=720,height=640,scrollbars=yes');
+  if(!w){ alert('Bloqueador de popups activo — habilitar.'); return; }
+  const esc = function(s){ return (s||'').replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); };
+  w.document.write('<html><head><title>Pack #'+p.indice+' '+esc(p.capa)+'</title><style>body{font-family:monospace;background:#111;color:#eee;padding:16px;font-size:12px;line-height:1.5}h2{color:#4AC34A}pre{white-space:pre-wrap;background:#000;padding:12px;border-radius:6px}</style></head><body>');
+  w.document.write('<h2>Pack #'+p.indice+' &middot; '+esc(p.capa)+' &middot; '+(p.sku?esc(p.sku):'sin SKU')+'</h2>');
+  w.document.write('<p><strong>Hook:</strong> '+esc(p.hook||'')+'<br><strong>Status:</strong> '+esc(p.status)+' &middot; <strong>Veredicto:</strong> '+esc(p.veredicto||'')+' &middot; <strong>Intentos:</strong> '+p.intentos+'</p>');
+  w.document.write('<pre>'+esc(p.pack_markdown)+'</pre>');
+  w.document.write('</body></html>');
+  w.document.close();
+}
+
+function actualizarBotonExport(){
+  const aprobados = (SET_MULTICAPA_STATE.packs||[]).filter(function(p){
+    return p.status === 'aprobado' || p.status === 'aprobado_ganador';
+  }).length;
+  const total = (SET_MULTICAPA_STATE.packs||[]).length || 12;
+  const btn = document.getElementById('set-export-btn');
+  const status = document.getElementById('set-export-status');
+  if(btn) btn.disabled = aprobados < SET_EXPORT_THRESHOLD;
+  if(status) status.textContent = aprobados + '/' + total + ' aprobados \u2014 necesitas ' + SET_EXPORT_THRESHOLD + ' para exportar';
+}
+
+function exportarSetAApp2(){
+  const g = SET_MULTICAPA_STATE.ganador;
+  if(!g){ alert('No hay ganador cargado.'); return; }
+  const aprobados = (SET_MULTICAPA_STATE.packs||[]).filter(function(p){
+    return p.status === 'aprobado' || p.status === 'aprobado_ganador';
+  });
+  if(aprobados.length < SET_EXPORT_THRESHOLD){
+    alert('Necesitas al menos ' + SET_EXPORT_THRESHOLD + ' packs aprobados. Tienes ' + aprobados.length + '.');
+    return;
+  }
+  const exportData = JSON.stringify({
+    roar_set_app2: {
+      ganador_sku: g.sku,
+      ganador_capa: g.capa,
+      ganador_segmento: g.segmento,
+      ganador_hook: g.hook,
+      ganador_angulo: g.anguloId,
+      total_packs: aprobados.length,
+      packs: aprobados.map(function(p){
+        return {
+          indice: p.indice,
+          sku: p.sku,
+          capa: p.capa,
+          segmento: p.segmento,
+          hook: p.hook,
+          angulo_id: p.anguloId,
+          pack: p.pack_estructurado,
+          pack_raw: p.pack_markdown,
+          veredicto: p.veredicto,
+          checks: p.checks,
+          intentos: p.intentos,
+          es_ganador: !!p.es_ganador
+        };
+      }),
+      timestamp: new Date().toISOString(),
+      parser_version: '1.0',
+      set_version: '1.0'
+    }
+  });
+  const encoded = btoa(unescape(encodeURIComponent(exportData)));
+  const url = 'https://roar-creativos.vercel.app?set=' + encodeURIComponent(encoded);
+  navigator.clipboard.writeText(exportData).then(function(){
+    const status = document.getElementById('set-export-status');
+    if(status) status.textContent = '\u2705 Set copiado al clipboard + abriendo App 2...';
+  }).catch(function(){});
+  window.open(url, '_blank');
+  try { localStorage.removeItem(SET_STORAGE_KEY); } catch(e){}
+}
+
+function limpiarSetMultiCapa(){
+  if(!confirm('Limpiar el Set Multi-Capa? Se perderan todos los packs generados.')) return;
+  SET_MULTICAPA_STATE = { ganador: null, matriz: { AI:4, IM:2, EOV:3, MARCA:2, COMP:1 }, packs: [], timestamp: null };
+  try { localStorage.removeItem(SET_STORAGE_KEY); } catch(e){}
+  ['AI','IM','EOV','MARCA','COMP'].forEach(function(c){
+    const el = document.getElementById('mat-'+c);
+    if(el) el.value = SET_MULTICAPA_STATE.matriz[c];
+  });
+  actualizarTotalMatriz();
+  _setRenderGanadorBanner();
+  renderTablaSet();
+  actualizarBotonExport();
+  const prev = document.getElementById('set-prev-banner');
+  if(prev) prev.style.display = 'none';
+  const progreso = document.getElementById('set-progreso');
+  if(progreso){ progreso.style.display = 'none'; progreso.textContent = ''; }
+  const btnGen = document.getElementById('set-gen-btn');
+  if(btnGen) btnGen.disabled = true;
+}
+
 function actualizarContextoPanel(){
   const panel = document.getElementById('contexto-activo');
   if(!panel) return;
@@ -1786,62 +2453,15 @@ async function correrAuditoriaROAR(){
   const anguloSkuMap = { perdida:'PerdidaEcon', comparativo:'CompOperativo', testimonial:'Testimonial', problema_fisico:'ProblemaFisico', imagen_profesional:'ImagenProf', validacion_dolor:'ValidacionDolor' };
   const anguloSkuSeg = anguloSkuMap[anguloIdAudit] || 'SinAngulo';
 
-  const esEOV = (capaVal === 'EOV');
-  const esImagen = (capaVal === 'IM' || capaVal === 'MARCA');
-  const esCOMP = (capaVal === 'COMP');
-  const tipoAudit = esImagen ? 'IMAGEN ESTATICA (sin audio, sin timecodes)' : esEOV ? 'VIDEO EOV (evidencia operativa real)' : esCOMP ? 'VIDEO/SPLIT COMPARATIVO (sin avatar)' : 'VIDEO CON AVATAR';
-
-  // Defaults = video con avatar (AI, COMP)
-  let criterio1 = ' 1) ANDROMEDA: La bolsa ROAR es protagonista visual en 0-3s (no la carne/marisco)';
-  let criterio2 = ' 2) ENTORNO: Hay senales de negocio en primeros 3s (mostrador/bascula/cajas/operacion)';
-  let criterio3 = ' 3) PROBLEMA: El dolor aparece ANTES que la solucion';
-  let criterio4 = ' 4) VOCABULARIO: Revisa SOLO el audio y script del video (NO el copy escrito de Meta Ads). FALLO UNICAMENTE si Cal.170 o Calibre 170 aparece en el AUDIO o SCRIPT del video. El copy escrito de Meta Ads SIEMPRE puede tener Cal.170 — NO es fallo. APROBADO si el audio/script usa lenguaje operador: se truena/desfonda/revienta.';
-  let criterio5 = ' 5) SEGMENTO: Menciona el giro especifico (carniceria/marisqueria/polleria/etc). APROBADO tambien si el contexto del pack menciona carne, carnicero, marisco, pescaderia, pollo, pollero, res, camaron, etc — aunque no diga la palabra exacta del giro. Solo FALLO si NO hay ninguna referencia al giro en ninguna forma (ni directa ni indirecta via producto/operador).';
-  let criterio6 = ' 6) ESTRUCTURA: Sigue 0-3s bolsa protagonista SIN avatar visible (audio del operador PUEDE empezar en segundo 0 — es correcto y es parte de la formula ganadora) / 3-7s overlay problema / 7-12s avatar+CTA';
-  let criterio7 = ' 7) CTA: Hay llamada a accion hacia WhatsApp';
-
-  if(esEOV){
-    criterio1 = ' 1) ANDROMEDA (regla especial EOV): La bolsa generica que FALLA es protagonista visual del problema en 0-3s — NO la carne/marisco sola. APROBADO si: (a) 0-3s muestra el PROBLEMA con una bolsa generica (bolsa que se truena, se desfonda, se rompe, la perforan) y esa bolsa fallida es el foco visual, (b) la bolsa ROAR aparece como solucion DESPUES del segundo 7. FALLO solo si: 0-3s muestra unicamente carne/marisco sin ninguna bolsa visible, o la carne/marisco es el foco visual en vez del fallo de la bolsa. IMPORTANTE: en EOV esta BIEN que la bolsa ROAR no aparezca en 0-3s — esa es la formula ganadora.';
-    criterio6 = ' 6) ESTRUCTURA EOV: 0-3s problema visible con bolsa generica + audio dolor operador / 3-7s overlay texto del problema (la bolsa ROAR AUN no aparece) / 7-12s bolsa ROAR protagonista como solucion + CTA WhatsApp. FALLO si la bolsa ROAR aparece antes del segundo 7.';
-  }
-
-  if(esCOMP){
-    criterio1 = ' 1) ANDROMEDA (regla especial COMP — split comparativo): El pack COMP es un split screen o comparativo directo entre bolsa ROAR y bolsa generica. APROBADO si AMBAS bolsas (ROAR y generica) son protagonistas visuales del split — el CONTRASTE entre las dos bolsas ES el protagonismo. NO se requiere que ROAR sea la unica bolsa en 0-3s. FALLO solo si la carne/marisco domina visualmente en vez del contraste entre bolsas, o si no hay bolsas visibles en el split.';
-    criterio6 = ' 6) ESTRUCTURA COMP (split comparativo sin avatar): 0-3s entorno de carniceria/marisqueria con AMBAS bolsas visibles (ROAR vs generica) / 3-7s problema de la bolsa generica destacado (rota, desfondada, doble bolsa) / 7-15s comparacion directa ROAR vs generica (split lado a lado, ROAR aguantando, generica fallando) / 15s+ matematicas del ahorro + CTA WhatsApp. APROBADO si sigue esta formula comparativa. IMPORTANTE: COMP NO tiene avatar — la tabla comparativa y el split screen SON el formato. NO penalices la ausencia de avatar HeyGen ni de narracion a camara.';
-  }
-
-  if(esImagen){
-    const esMarca = (capaVal === 'MARCA');
-    criterio1 = esMarca
-      ? ' 1) ANDROMEDA (MARCA — brand awareness): Busca en la SECCION "PROMPT IMAGEN ELEVENLABS 9:16" y "PROMPT IMAGEN ELEVENLABS 1:1". APROBADO si el prompt especifica que la bolsa ROAR es protagonista visual (bolsa hero shot, bolsa en primer plano, bolsa centrada, iluminacion premium sobre la bolsa). En MARCA el fondo neutro, estudio o iluminacion aislada son INTENCIONALES y correctos — NO requiere carne ni marisco ni contexto de negocio en la imagen. FALLO solo si el prompt no menciona explicitamente que la bolsa sea protagonista o si describe otro objeto como foco principal.'
-      : ' 1) ANDROMEDA (imagen estatica ' + capaVal + '): Busca en la SECCION "PROMPT IMAGEN ELEVENLABS 9:16" y "PROMPT IMAGEN ELEVENLABS 1:1". APROBADO si el prompt de imagen especifica que la bolsa ROAR es protagonista visual (palabras clave: bolsa protagonista, bolsa en primer plano, bolsa hero shot, bolsa close-up, bolsa centrada). Puede haber carne/marisco visible como CONTEXTO del negocio — eso NO es fallo. FALLO solo si el prompt describe la carne como foco principal o no menciona explicitamente que la bolsa sea protagonista.';
-    criterio2 = esMarca
-      ? ' 2) ENTORNO (MARCA — brand awareness): En MARCA el fondo neutro y el estudio son intencionales. APROBADO si el prompt describe iluminacion premium, fondo neutro profesional, estudio, acabado editorial o cualquier entorno coherente con branding. FALLO solo si el prompt es caotico o sin criterio visual.'
-      : ' 2) ENTORNO (imagen estatica): Busca en la SECCION "PROMPT IMAGEN" si describe contexto de negocio — mostrador, bascula, ambiente de carniceria/marisqueria, cajas, acero inoxidable, operador trabajando. FALLO si el prompt describe fondo neutro, estudio aislado, o no menciona contexto de negocio.';
-    criterio3 = ' 3) PROBLEMA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" y en "COPY META ADS - 3 VARIANTES". APROBADO si el headline, subhead u overlay menciona el PROBLEMA (se truena/desfonda/revienta/perforan/se rompe/doble bolsa/pierdo producto) ANTES que la solucion ROAR. NO busques el problema en el prompt de imagen — el problema vive en el overlay y el copy. FALLO solo si NI el overlay NI el copy mencionan el dolor del operador.' +
-      (esMarca ? ' En MARCA este criterio es flexible: APROBADO tambien si el overlay o copy expresan la promesa de marca como contraste al dolor del mercado (ej "la que no te deja tirado", "la que si aguanta"), aunque no nombre el problema literalmente.' : '');
-    criterio4 = ' 4) VOCABULARIO (imagen estatica): Evalua SOLO la SECCION "TEXTO OVERLAY PARA DISENO" y la SECCION "COPY META ADS - 3 VARIANTES". NO evalues el prompt de imagen — el prompt es instruccion tecnica, no copy para el usuario. APROBADO si el texto overlay y/o el copy Meta Ads usan lenguaje operador real (se truena, se desfonda, revienta, los picos perforan, ya no pongo doble bolsa, aguanta, no te deja tirado). FALLO solo si el overlay y copy usan tecnicismos o lenguaje corporativo.';
-    criterio5 = esMarca
-      ? ' 5) SEGMENTO (MARCA): Busca en TEXTO OVERLAY, COPY META ADS o subhead si menciona el tipo de negocio al que sirve ROAR (carniceria, marisqueria, negocio de alimentos, carne, marisco, pollo, camaron, operador, carnicero, marisquero). APROBADO aunque el giro no sea el foco principal del mensaje — basta con que el copy lo mencione como contexto de a quien le habla la marca. FALLO solo si NINGUNA seccion del pack menciona ningun tipo de negocio ni giro.'
-      : ' 5) SEGMENTO (imagen estatica): Busca en cualquier seccion (prompt/overlay/copy) si menciona el giro especifico (carniceria/marisqueria/polleria/etc). APROBADO tambien si el contexto del pack menciona carne, carnicero, marisco, pescaderia, pollo, pollero, res, camaron, etc — aunque no diga la palabra exacta del giro.';
-    criterio6 = ' 6) ESTRUCTURA (imagen estatica): Verifica en la SECCION "TEXTO OVERLAY PARA DISENO" que existan los 3 elementos: HEADLINE (titular grande' + (esMarca ? ' con la brand promise o autoridad' : ' con el problema') + '), SUBHEAD (linea de soporte' + (esMarca ? ' que menciona el giro al que sirve ROAR' : ' o solucion') + ') y CTA (llamada a WhatsApp). APROBADO si los 3 estan presentes en el overlay. FALLO solo si falta headline, subhead o CTA en la seccion overlay. NO aplican timecodes de video.';
-    criterio7 = ' 7) CTA (imagen estatica): Busca en la SECCION "TEXTO OVERLAY PARA DISENO" o en "COPY META ADS - 3 VARIANTES" una llamada a accion a WhatsApp (literal "Mandame WhatsApp" o "Escribeme al WhatsApp" o "WhatsApp"). APROBADO si el CTA WhatsApp aparece en overlay o copy. FALLO solo si no hay CTA WhatsApp en ninguna de esas dos secciones, o si el CTA es solo un numero de telefono.';
-  }
+  // Criterios extraidos a PROMPT_CRITERIOS_AUDITORIA (calibracion 16 abril — misma jerarquia)
+  const crit = PROMPT_CRITERIOS_AUDITORIA[capaVal] || PROMPT_CRITERIOS_AUDITORIA['AI'];
 
   const p = 'Eres el auditor de creativos de ROAR Plasticos GDL. ' +
     'Analiza este pack creativo y evalua CADA criterio con APROBADO o FALLO + razon de una linea. ' +
-    'CAPA DEL PACK: ' + capaVal + ' — TIPO DE CREATIVO: ' + tipoAudit + '. ' +
-    (esEOV ? 'Aplicar reglas especiales EOV en criterios 1 y 6. ' : '') +
-    (esCOMP ? 'Aplicar reglas especiales COMP en criterios 1 y 6 — este es un video/split comparativo sin avatar. NO penalices ausencia de avatar HeyGen ni narracion a camara — la tabla comparativa y el split screen SON el formato. El contraste entre la bolsa ROAR y la bolsa generica ES el protagonismo visual. ' : '') +
-    (esImagen ? 'Aplicar criterios de IMAGEN ESTATICA — NO hay audio, NO hay timecodes de video, evalua composicion visual + copy + overlay. NO penalices la ausencia de script o audio porque no aplica en este formato. El pack IM tiene 4 secciones: (1) PROMPT IMAGEN ELEVENLABS 9:16, (2) PROMPT IMAGEN ELEVENLABS 1:1, (3) TEXTO OVERLAY PARA DISENO, (4) COPY META ADS - 3 VARIANTES. LEE las 4 secciones antes de evaluar — especialmente overlay y copy donde vive el problema, vocabulario y CTA. ' : '') +
+    'CAPA DEL PACK: ' + capaVal + ' — TIPO DE CREATIVO: ' + crit.tipoCreativo + '. ' +
+    crit.extraPrefix +
     'CRITERIOS A EVALUAR:' +
-    criterio1 +
-    criterio2 +
-    criterio3 +
-    criterio4 +
-    criterio5 +
-    criterio6 +
-    criterio7 +
+    crit.c1 + crit.c2 + crit.c3 + crit.c4 + crit.c5 + crit.c6 + crit.c7 +
     ' PACK A AUDITAR (completo con todas las secciones):\n' + packContent.substring(0, 3000) +
     ' AL FINAL: VEREDICTO FINAL con una de estas tres opciones:' +
     ' ✅ APROBADO — listo para produccion' +
