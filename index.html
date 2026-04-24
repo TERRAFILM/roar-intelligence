@@ -1640,6 +1640,71 @@ async function cargarCreditos(){
   if(status) status.textContent = 'Actualizado — ' + new Date().toLocaleTimeString();
 }
 
+function parseaPackMarkdown(packTexto, capa){
+  if(!packTexto || typeof packTexto !== 'string') return { pack_raw: packTexto || '' };
+
+  function extraerSeccion(n){
+    var re = new RegExp('##\\s*' + n + '\\s*[\\)\\.\\:\\-]\\s*[^\\n]*\\n?([\\s\\S]*?)(?=\\n##\\s*\\d|$)', '');
+    var m = packTexto.match(re);
+    return m ? m[1].trim() : '';
+  }
+
+  function parseCopyVariantes(bloque){
+    if(!bloque) return [];
+    var partes = bloque.split(/\*{0,2}\s*Variante\s*[123]\s*[:\.\-\)]?\s*\*{0,2}/i)
+      .map(function(s){ return s.trim(); })
+      .filter(function(s){ return s.length > 0; });
+    if(partes.length >= 2) return partes.slice(0, 3);
+    return [bloque.trim()];
+  }
+
+  var C = (capa || '').toUpperCase();
+
+  if(C === 'AI'){
+    return {
+      prompt_imagen: extraerSeccion(1),
+      script_heygen: extraerSeccion(2),
+      copy_variantes: parseCopyVariantes(extraerSeccion(3)),
+      instrucciones_capcut: extraerSeccion(4)
+    };
+  }
+  if(C === 'EOV'){
+    return {
+      guion_grabacion: extraerSeccion(1),
+      texto_overlay: extraerSeccion(2),
+      copy_variantes: parseCopyVariantes(extraerSeccion(3)),
+      instrucciones_capcut: extraerSeccion(4)
+    };
+  }
+  if(C === 'IM'){
+    return {
+      prompt_imagen_9x16: extraerSeccion(1),
+      prompt_imagen_1x1: extraerSeccion(2),
+      texto_overlay: extraerSeccion(3),
+      copy_variantes: parseCopyVariantes(extraerSeccion(4))
+    };
+  }
+  if(C === 'MARCA'){
+    return {
+      prompt_imagen_9x16: extraerSeccion(1),
+      prompt_imagen_1x1: extraerSeccion(2),
+      texto_overlay: extraerSeccion(3),
+      copy_variantes: parseCopyVariantes(extraerSeccion(4)),
+      hashtags_contexto: extraerSeccion(5)
+    };
+  }
+  if(C === 'COMP'){
+    return {
+      prompt_imagen_9x16: extraerSeccion(1),
+      tabla_comparativa: extraerSeccion(2),
+      copy_variantes: parseCopyVariantes(extraerSeccion(3)),
+      instrucciones_capcut: extraerSeccion(4)
+    };
+  }
+
+  return { pack_raw: packTexto };
+}
+
 function exportarAApp2(){
   const pack = document.getElementById('creat-out') ? document.getElementById('creat-out').innerText : '';
   const sku = document.getElementById('auditoria-sku') ? document.getElementById('auditoria-sku').textContent : '';
@@ -1647,14 +1712,23 @@ function exportarAApp2(){
     document.getElementById('export-status').textContent = '⚠️ Genera y audita un pack primero';
     return;
   }
+  const capaVal = document.getElementById('capa') ? document.getElementById('capa').value : '';
+  let packParsed;
+  try {
+    packParsed = parseaPackMarkdown(pack, capaVal);
+  } catch(e){
+    packParsed = { pack_raw: pack, parse_error: e.message };
+  }
   const exportData = JSON.stringify({
     roar_pack_app2: {
       sku: sku,
-      pack: pack,
+      pack: packParsed,
+      pack_raw: pack,
       segmento: document.getElementById('seg') ? document.getElementById('seg').value : '',
-      capa: document.getElementById('capa') ? document.getElementById('capa').value : '',
+      capa: capaVal,
       hook: document.getElementById('ang') ? document.getElementById('ang').value : '',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      parser_version: "1.0"
     }
   });
   var encoded = btoa(unescape(encodeURIComponent(exportData)));
