@@ -456,7 +456,24 @@ const PROMPT_BASE_CREATIVO = function(segVal, capaVal, hookVal, anguloTxt){
 };
 
 const PROMPT_CAPAS_CREATIVO = {
-  'AI': ' CAPA AI — AVATAR + SCRIPT HEYGEN.' +
+  'AI': ' === DISCIPLINA CINEMATOGRAFICA AI ===' +
+      ' PRESET CAMARA: Arri Alexa 35 (digital sensor cinematographic).' +
+      ' LENTE: ARRI Signature Prime spherical 35mm.' +
+      ' APERTURA: f/4 (depth of field controlado, sujeto en foco, fondo difuminado).' +
+      ' FRAME RATE: 24fps cinematic.' +
+      ' MOOD LIGHTING: warm key light desde izquierda + cool fill suave.' +
+      ' Iluminacion comercial mexicana documental — NO ring light, NO neon, NO oversaturated.' +
+      ' AUDIO DIEGETICO OBLIGATORIO en cada shot:' +
+      ' 0-3s: sonido de bolsa estresada (crujido, tension, asa rechinando) + ambiente carniceria (extractor de fondo, voces lejanas).' +
+      ' 3-7s: voz operador con micro lavalier — NO con eco de sala, sin reverb.' +
+      ' 7-12s: avatar HeyGen voz limpia close-mic + sonido WhatsApp notification al CTA.' +
+      ' SHOT LIST CRONOMETRADO OBLIGATORIO en el script HeyGen:' +
+      ' Shot 1 (0-3s): Close-up extremo bolsa anudada, low angle desde mostrador, camera handheld con micro-vibracion de tension.' +
+      ' Shot 2 (3-7s): Medium shot operador frente a mostrador, eye-level, camera estatica tripod, light desde ventana lateral.' +
+      ' Shot 3 (7-12s): Avatar HeyGen plano americano centrado, camera estatica, depth of field f/4.' +
+      ' Cada shot DEBE incluir camara, angulo, duracion exacta y audio diegetico esperado.' +
+      ' === FIN DISCIPLINA CINEMATOGRAFICA AI ===' +
+      ' CAPA AI — AVATAR + SCRIPT HEYGEN.' +
       ' Este pack es VIDEO con avatar HeyGen hablando a camara.' +
       ' ESTRUCTURA VIDEO 12-14 segundos:' +
       ' 0-3s: SOLO BOLSA close-up nudo tension SIN avatar — audio del carnicero empieza inmediato.' +
@@ -473,9 +490,26 @@ const PROMPT_CAPAS_CREATIVO = {
       ' (Ganador/Miedo perdida/Social proof, max 125 caracteres cada uno)' +
       ' ## 4) INSTRUCCIONES CAPCUT' +
       ' (zonas seguras Stories 14/20, Reels 14/35/6, fuente blanca bold)' +
-      ' Max 500 palabras total.',
+      ' Max 600 palabras total.',
 
-  'EOV': ' CAPA EOV — EVIDENCIA OPERATIVA REAL.' +
+  'EOV': ' === DISCIPLINA STORYBOARD EOV (para Jair en planta) ===' +
+      ' EOV es VIDEO REAL grabado con celular 4K en planta del cliente — NO IA, NO render.' +
+      ' STORYBOARD OBLIGATORIO: 4-6 shots numerados con instruccion explicita de camara.' +
+      ' Cada shot debe especificar:' +
+      '   - QUE GRABAR (objeto + accion concreta)' +
+      '   - ANGULO (low/high/eye-level/over-shoulder)' +
+      '   - DURACION exacta en segundos' +
+      '   - QUE DEBE ESCUCHARSE (audio diegetico real, NO musica)' +
+      '   - INSTRUCCION DE CAMARA (handheld con micro-vibracion / estatica sobre mostrador / pan lento de izquierda a derecha)' +
+      ' EJEMPLO DEL FORMATO ESPERADO:' +
+      '   Shot 1 (3s): Plano detalle de bolsa generica que falla. Low angle desde mesa. Handheld con micro-vibracion. Audio: crujido + voz fondo "ya se truena otra vez".' +
+      '   Shot 2 (2s): Operador agarra carne con guantes, la mete a bolsa ROAR. Eye-level. Camera estatica sobre mostrador. Audio: sonido carne + voz "esta es la diferencia".' +
+      '   Shot 3 (4s): Levanta bolsa ROAR cargada con 20kg. Low angle dramatico. Handheld estable. Audio: peso real + silencio comparativo.' +
+      ' MOOD: documental crudo mexicano — ilumiacion fluorescente real de la planta, NO film grain artificial, NO color grade saturado.' +
+      ' AUDIO: SIEMPRE diegetico — sonidos del ambiente, voces operadores, ruido de extractor. PROHIBIDO musica de fondo, PROHIBIDO voz en off de locutor.' +
+      ' EVIDENCIA VISUAL OBLIGATORIA: en al menos 1 shot debe verse el numero "20.00 kg" en bascula o señal de peso real.' +
+      ' === FIN DISCIPLINA STORYBOARD EOV ===' +
+      ' CAPA EOV — EVIDENCIA OPERATIVA REAL.' +
       ' Este pack es VIDEO/FOTO de evidencia real filmada en el negocio del cliente. NO usa avatar HeyGen.' +
       ' CONCEPTO: video crudo, real, grabado con celular en carniceria/marisqueria real. Bolsa bajo estres real.' +
       ' CONTENIDO: la bolsa aguantando peso real, congelador real, operacion diaria real.' +
@@ -494,9 +528,27 @@ const PROMPT_CAPAS_CREATIVO = {
       ' (tono testimonial real, max 125 caracteres cada uno, CTA WhatsApp explicito)' +
       ' ## 4) INSTRUCCIONES CAPCUT' +
       ' (cortes rapidos, sin transiciones fancy, fuente blanca bold, respetar estructura 0-3s problema / 3-7s overlay / 7-12s solucion+CTA)' +
-      ' Max 450 palabras total.',
+      ' Max 600 palabras total.',
 
-  'IM': ' CAPA IM — INTENCION MEDIA.' +
+  'IM': ' === DISCIPLINA CINEMATOGRAFICA IM (Higgsfield-style) ===' +
+      ' IM es IMAGEN ESTATICA — esto NO es video, es foto profesional para Meta Ads.' +
+      ' PRESET CAMARA: Arri Alexa 35 (sensor cinematic, color science profesional).' +
+      ' LENTE: ARRI Signature Prime spherical.' +
+      ' FOCAL: 50mm (formato 1:1) o 35mm (formato 9:16) — definir explicito en el prompt.' +
+      ' APERTURA: f/2.8 (depth of field shallow, sujeto principal hyper-detallado, fondo bokeh suave).' +
+      ' ILUMINACION 3-POINT PROFESIONAL OBLIGATORIA:' +
+      '   - Key light: warm 3200K desde 45deg arriba izquierda' +
+      '   - Fill light: cool 5600K suave desde derecha al 30% intensidad del key' +
+      '   - Rim light: backlight para separar sujeto del fondo' +
+      ' COMPOSICION: regla de tercios. Sujeto en interseccion. Fondo limpio sin distracciones.' +
+      ' COLOR GRADE: cinematic — sombras teal sutil, highlights warm, contraste medio-alto.' +
+      ' RESOLUCION: 8K detail level mencionado en prompt.' +
+      ' DOS PROMPTS REQUERIDOS:' +
+      '   - Uno para 9:16 (Stories/Reels) con focal 35mm vertical composition' +
+      '   - Uno para 1:1 (Feed) con focal 50mm composition centrada' +
+      ' Cada prompt DEBE explicitar: camara, lente, focal, apertura, iluminacion, composicion, color grade.' +
+      ' === FIN DISCIPLINA CINEMATOGRAFICA IM ===' +
+      ' CAPA IM — INTENCION MEDIA.' +
       ' Este pack es IMAGEN ESTATICA o CARRUSEL para captar atencion media en el feed. NO video, NO avatar.' +
       ' CONCEPTO: imagen llamativa con la bolsa protagonista + overlay texto con hook del problema.' +
       ' La imagen debe detener el scroll — visual impactante de la bolsa en contexto de negocio real.' +
@@ -509,9 +561,28 @@ const PROMPT_CAPAS_CREATIVO = {
       ' (headline + subhead + CTA en vocabulario operador — para sobreimponer en Canva/CapCut)' +
       ' ## 4) COPY META ADS - 3 VARIANTES' +
       ' (hook visual, curiosidad, max 125 caracteres cada uno)' +
-      ' Max 400 palabras total.',
+      ' Max 500 palabras total.',
 
-  'MARCA': ' CAPA MARCA — BRANDING.' +
+  'MARCA': ' === DISCIPLINA STORYBOARD HERO MARCA (estilo Oro Verder + Doux Masr) ===' +
+      ' MARCA es BRAND HERO — la bolsa solucionada como producto premium.' +
+      ' STORYBOARD VISUAL: minimo 4 frames antes de cualquier render.' +
+      ' DOS MODOS DE FRAME segun proposito:' +
+      '   MODO A — HERO PRODUCTO (golden hour calido estilo Oro Verder):' +
+      '     Camara: Arri Alexa Mini LF, lente ARRI Signature Prime 85mm, apertura f/2.0.' +
+      '     Iluminacion: golden hour rim light + softbox key warm 3000K.' +
+      '     Color grade: warm tones rojizos calidos, saturacion media.' +
+      '     Composicion: simetrica, producto centrado, fondo natural difuminado.' +
+      '     Usar para: Frame 1 (hero) y Frame 4 (resultado del producto).' +
+      '   MODO B — CHARACTER LIMPIO (estudio neutro estilo Doux Masr):' +
+      '     Camara: Arri Alexa Mini LF, lente ARRI Signature Prime 50mm, apertura f/2.8.' +
+      '     Iluminacion: 3-point profesional, key warm 3200K, fill cool 5600K, rim separacion fondo.' +
+      '     Color grade: cinematic neutral, saturacion baja, piel natural.' +
+      '     Composicion: regla de tercios, fondo blanco/gris uniforme limpio.' +
+      '     Usar para: Frame 2 (uso real con operador) y Frame 3 (detalle producto).' +
+      ' Cada Frame DEBE especificar: MODO (A o B) + camara + lente + focal + apertura + iluminacion.' +
+      ' MOOD GLOBAL: aspiracional pero accesible — calidez de productora artesanal mexicana profesional.' +
+      ' === FIN DISCIPLINA STORYBOARD HERO MARCA ===' +
+      ' CAPA MARCA — BRANDING.' +
       ' Este pack es contenido de MARCA/BRAND para construir autoridad y reconocimiento. NO es performance directo.' +
       ' CONCEPTO: posicionar ROAR como el especialista en bolsas para negocios de alimentos en Mexico.' +
       ' TONO: profesional pero cercano, autoridad tecnica sin tecnicismos, orgullo de marca mexicana.' +
@@ -529,9 +600,22 @@ const PROMPT_CAPAS_CREATIVO = {
       ' ## 5) HASHTAGS Y CONTEXTO' +
       ' (hashtags relevantes, momento de publicacion sugerido, plataforma ideal)' +
       ' REGLA CRITICA MARCA: CTA WhatsApp obligatorio tanto en TEXTO OVERLAY como en las 3 variantes de COPY META ADS. NUNCA numero de telefono.' +
-      ' Max 400 palabras total.',
+      ' Max 500 palabras total.',
 
-  'COMP': ' CAPA COMP — COMPARATIVO.' +
+  'COMP': ' === DISCIPLINA SPLIT VISUAL COMP ===' +
+      ' COMP es COMPARATIVO — dos lados visuales contrastados.' +
+      ' COMPOSICION SPLIT-SCREEN OBLIGATORIA:' +
+      '   - LADO IZQUIERDO: bolsa generica que FALLA. Color grade desaturated, frio, sombras grises azuladas, low contrast.' +
+      '   - LADO DERECHO: bolsa ROAR que AGUANTA. Color grade warm, vivido, sombras calidas, high contrast.' +
+      ' DIVIDER: linea blanca vertical de 4px exactos en el centro.' +
+      ' PRESET CAMARA: Arri Alexa 35 ambos lados.' +
+      ' LENTE: ARRI Signature Prime 50mm en ambos lados (consistencia).' +
+      ' APERTURA: f/4 ambos lados (mismo depth of field para comparacion justa).' +
+      ' COMPOSICION ESPEJO: ambos sujetos a la misma altura, mismo encuadre, misma escala — solo varia la accion (falla vs aguanta) y el color grade (frio vs calido).' +
+      ' AUDIO si es video: silencio del lado izquierdo + sonido confiable del derecho (peso solido, sello firme).' +
+      ' TABLA COMPARATIVA TEXTUAL: minimo 3 puntos de comparacion concretos al pie del frame visual.' +
+      ' === FIN DISCIPLINA SPLIT VISUAL COMP ===' +
+      ' CAPA COMP — COMPARATIVO.' +
       ' Este pack es contenido COMPARATIVO: ROAR vs competencia generica / vs doble bolsa / vs material reciclado.' +
       ' CONCEPTO: demostrar superioridad de la bolsa ROAR 50x70 Cal.170 con datos y comparacion directa.' +
       ' NUNCA nombrar marcas competidoras por nombre — comparar contra "la bolsa del mercado" o "la bolsa barata".' +
@@ -545,7 +629,7 @@ const PROMPT_CAPAS_CREATIVO = {
       ' (comparativo directo, matematicas de ahorro, reto al operador, max 125 caracteres cada uno)' +
       ' ## 4) INSTRUCCIONES CAPCUT' +
       ' (formato split o carrusel, transiciones de revelacion)' +
-      ' Max 400 palabras total.'
+      ' Max 500 palabras total.'
 };
 
 // Criterios auditoria por capa. Sombra de correrAuditoriaROAR calibrada el 16 abr.
