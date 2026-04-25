@@ -2359,18 +2359,30 @@ function actualizarBotonExport(){
   if(status) status.textContent = aprobados + '/' + total + ' aprobados \u2014 necesitas ' + SET_EXPORT_THRESHOLD + ' para exportar';
 }
 
-function exportarSetAApp2(){
+async function exportarSetAApp2(){
   const g = SET_MULTICAPA_STATE.ganador;
   if(!g){ alert('No hay ganador cargado.'); return; }
+
   const aprobados = (SET_MULTICAPA_STATE.packs||[]).filter(function(p){
     return p.status === 'aprobado' || p.status === 'aprobado_ganador';
   });
+
   if(aprobados.length < SET_EXPORT_THRESHOLD){
     alert('Necesitas al menos ' + SET_EXPORT_THRESHOLD + ' packs aprobados. Tienes ' + aprobados.length + '.');
     return;
   }
-  const exportData = JSON.stringify({
-    roar_set_app2: {
+
+  const btnExport = document.getElementById('set-export-btn');
+  const exportStatus = document.getElementById('set-export-status');
+
+  if(btnExport) btnExport.disabled = true;
+  if(exportStatus){
+    exportStatus.textContent = '\u23f3 Subiendo set a Supabase...';
+    exportStatus.style.color = '#FFA000';
+  }
+
+  try {
+    const payload = {
       ganador_sku: g.sku,
       ganador_capa: g.capa,
       ganador_segmento: g.segmento,
@@ -2396,16 +2408,61 @@ function exportarSetAApp2(){
       timestamp: new Date().toISOString(),
       parser_version: '1.0',
       set_version: '1.0'
+    };
+
+    const insertBody = {
+      ganador_sku: g.sku,
+      ganador_segmento: g.segmento,
+      ganador_capa: g.capa,
+      ganador_hook: g.hook,
+      total_packs: SET_MULTICAPA_STATE.packs.length,
+      packs_aprobados: aprobados.length,
+      payload: payload
+    };
+
+    const r = await fetch('/api/supabase-set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(insertBody)
+    });
+
+    if(!r.ok){
+      const errData = await r.json().catch(function(){ return {}; });
+      throw new Error('POST fallo: ' + r.status + ' ' + (errData.detail || errData.error || ''));
     }
-  });
-  const encoded = btoa(unescape(encodeURIComponent(exportData)));
-  const url = 'https://roar-creativos.vercel.app?set=' + encodeURIComponent(encoded);
-  navigator.clipboard.writeText(exportData).then(function(){
-    const status = document.getElementById('set-export-status');
-    if(status) status.textContent = '\u2705 Set copiado al clipboard + abriendo App 2...';
-  }).catch(function(){});
-  window.open(url, '_blank');
-  try { localStorage.removeItem(SET_STORAGE_KEY); } catch(e){}
+
+    const data = await r.json();
+    const setId = data.id;
+
+    if(!setId) throw new Error('Respuesta sin set_id');
+
+    const url = 'https://roar-creativos.vercel.app?set_id=' + setId;
+
+    try { await navigator.clipboard.writeText(url); } catch(e){}
+    try { localStorage.removeItem(SET_STORAGE_KEY); } catch(e){}
+
+    window.open(url, '_blank');
+
+    if(exportStatus){
+      exportStatus.innerHTML = '\u2705 Set subido. ID: <code style="font-size:10px">' + setId + '</code> \u2014 App 2 abierta. URL en clipboard.';
+      exportStatus.style.color = '#0f0';
+    }
+
+    SET_MULTICAPA_STATE.packs = [];
+    SET_MULTICAPA_STATE.ganador = null;
+    if(typeof renderTablaSet === 'function') renderTablaSet();
+    if(typeof _setRenderGanadorBanner === 'function') _setRenderGanadorBanner();
+    if(typeof actualizarBotonExport === 'function') actualizarBotonExport();
+
+  } catch(err) {
+    console.error('exportarSetAApp2 error:', err);
+    if(exportStatus){
+      exportStatus.textContent = '\u274c Error: ' + err.message;
+      exportStatus.style.color = '#f44';
+    }
+    if(btnExport) btnExport.disabled = false;
+    alert('Error subiendo set:\n' + err.message);
+  }
 }
 
 function limpiarSetMultiCapa(){
