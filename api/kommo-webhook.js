@@ -1,6 +1,7 @@
+// api/kommo-webhook.js
 // Webhook receptor de mensajes WA desde Kommo.
-// Captura texto entrante, detecta keywords de problema y mantiene contadores
-// en memoria caliente del runtime Vercel. No persiste entre cold starts.
+// Captura cada mensaje ENTRANTE, lo guarda en Supabase (tabla mensajes_leads)
+// y mantiene contadores de keywords en memoria caliente para diagnostico rapido via GET.
 
 const KEYWORDS = {
   se_rompe_truena:  ['se rompe', 'se truena', 'truena', 'revienta', 'se desfonda', 'desfonda'],
@@ -15,51 +16,93 @@ const KEYWORDS = {
 function initCounters() {
   if (!global._roarWebhookCounters) {
     global._roarWebhookCounters = {
-      se_rompe_truena: 0,
-      doble_bolsa: 0,
-      no_soporta_peso: 0,
-      calor_revienta: 0,
-      picos_perforan: 0,
-      frio_congelador: 0,
-      solo_precio: 0,
-      total_mensajes_analizados: 0,
-      ultimo_mensaje: null,
-      iniciado: new Date().toISOString()
+      se_rompe_truena: 0, doble_bolsa: 0, no_soporta_peso: 0,
+      calor_revienta: 0, picos_perforan: 0, frio_congelador: 0,
+      solo_precio: 0, total_mensajes_analizados: 0,
+      total_guardados_supabase: 0, ultimo_error_supabase: null,
+      ultimo_mensaje: null, iniciado: new Date().toISOString()
     };
   }
   return global._roarWebhookCounters;
 }
 
-function extractText(body) {
-  if (!body) return '';
-  const candidates = [];
-
-  if (body.message && typeof body.message === 'object' && body.message.text) candidates.push(body.message.text);
-  if (body.payload && body.payload.message && body.payload.message.text) candidates.push(body.payload.message.text);
-  if (body.payload && body.payload.body) candidates.push(body.payload.body);
-  if (body.incoming_chat_message && body.incoming_chat_message.text) candidates.push(body.incoming_chat_message.text);
-  if (typeof body.text === 'string') candidates.push(body.text);
-  if (typeof body.body === 'string') candidates.push(body.body);
-  if (typeof body.content === 'string') candidates.push(body.content);
-
-  if (Array.isArray(body.messages)) {
-    body.messages.forEach(m => {
-      if (!m) return;
-      if (typeof m.text === 'string') candidates.push(m.text);
-      else if (typeof m.body === 'string') candidates.push(m.body);
-    });
+function toFlatParams(body) {
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    const hasKommoKeys = Object.keys(body).some(k => k.indexOf('message[add]') === 0 || k.indexOf('account[') === 0);
+    if (hasKommoKeys) return body;
   }
+  if (typeof body === 'string' && body.length) {
+    const flat = {};
+    body.split('&').forEach(pair => {
+      const idx = pair.indexOf('=');
+      if (idx === -1) return;
+      const k = decodeURIComponent(pair.slice(0, idx).replace(/\+/g, ' '));
+      const v = decodeURIComponent(pair.slice(idx + 1).replace(/\+/g, ' '));
+      flat[k] = v;
+    });
+    return flat;
+  }
+  return body || {};
+}
 
-  let text = candidates.filter(Boolean).join(' ').trim();
-  if (!text) text = JSON.stringify(body);
-  return text.toLowerCase();
+function parseKommoMessage(flat) {
+  const get = (k) => (flat[k] !== undefined ? flat[k] : null);
+  const texto = get('message[add][0][text]');
+  if (!texto) return null;
+  return {
+    texto: texto,
+    chat_id:     get('message[add][0][chat_id]'),
+    contact_id:  get('message[add][0][contact_id]') ? Number(get('message[add][0][contact_id]')) : null,
+    entity_id:   get('message[add][0][entity_id]') ? Number(get('message[add][0][entity_id]')) : null,
+    entity_type: get('message[add][0][entity_type]'),
+    subdomain:   get('account[subdomain]')
+  };
+}
+
+async function guardarEnSupabase(msg, rawFlat, counters) {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    counters.ultimo_error_supabase = 'env no configuradas';
+    return;
+  }
+  const insertRow = {
+    lead_id:     msg.entity_type === 'lead' ? msg.entity_id : null,
+    contact_id:  msg.contact_id,
+    chat_id:     msg.chat_id,
+    texto:       msg.texto,
+    autor:       'lead',
+    entity_type: msg.entity_type,
+    subdomain:   msg.subdomain,
+    raw:         rawFlat
+  };
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/mensajes_leads', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(insertRow)
+    });
+    if (!r.ok) {
+      counters.ultimo_error_supabase = 'HTTP ' + r.status + ': ' + (await r.text()).slice(0, 200);
+    } else {
+      counters.total_guardados_supabase += 1;
+      counters.ultimo_error_supabase = null;
+    }
+  } catch (err) {
+    counters.ultimo_error_supabase = err.message;
+  }
 }
 
 function detectKeywords(text, counters) {
   const detectados = [];
+  const lower = (text || '').toLowerCase();
   Object.keys(KEYWORDS).forEach(cat => {
-    const hit = KEYWORDS[cat].some(kw => text.indexOf(kw.toLowerCase()) !== -1);
-    if (hit) {
+    if (KEYWORDS[cat].some(kw => lower.indexOf(kw.toLowerCase()) !== -1)) {
       counters[cat] = (counters[cat] || 0) + 1;
       detectados.push(cat);
     }
@@ -75,32 +118,36 @@ function setCors(res) {
 
 export default async function handler(req, res) {
   setCors(res);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   const counters = initCounters();
 
   if (req.method === 'GET') {
-    return res.status(200).json({
-      ok: true,
-      source: 'kommo-webhook',
-      counters
-    });
+    return res.status(200).json({ ok: true, source: 'kommo-webhook', counters });
   }
 
   if (req.method === 'POST') {
     try {
-      const body = req.body || {};
-      const text = extractText(body);
-      const detectados = detectKeywords(text, counters);
+      const flat = toFlatParams(req.body);
+      const msg = parseKommoMessage(flat);
+
+      if (!msg) {
+        counters.total_mensajes_analizados += 1;
+        return res.status(200).json({ ok: true, guardado: false, motivo: 'sin texto de mensaje' });
+      }
+
+      const detectados = detectKeywords(msg.texto, counters);
       counters.total_mensajes_analizados += 1;
-      counters.ultimo_mensaje = text.slice(0, 500);
+      counters.ultimo_mensaje = msg.texto.slice(0, 500);
+
+      await guardarEnSupabase(msg, flat, counters);
+
       return res.status(200).json({
         ok: true,
+        guardado: true,
         detectados,
-        total: counters.total_mensajes_analizados
+        total: counters.total_mensajes_analizados,
+        guardados: counters.total_guardados_supabase
       });
     } catch (err) {
       return res.status(500).json({ ok: false, error: err.message });
